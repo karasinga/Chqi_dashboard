@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bethlehem Church</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      @font-face {
+        font-family: 'LucideIcons';
+        src: url(https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.ttf) format('truetype');
+      }
+      .lucide {
+        font-family: 'LucideIcons';
+        font-style: normal;
+        font-weight: normal;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: "liga";
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc; /* Light gray background */
+      }
+      /* Custom styles for better visual appeal */
+      .hero-section {
+        background-color: #1f2937; /* Dark background for hero */
+        color: white;
+      }
+      .card {
+          background-color: white;
+          border-radius: 0.5rem; /* rounded-lg */
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+          overflow: hidden; /* Ensure image corners are rounded */
+          transition: transform 0.3s ease;
+      }
+      .card:hover {
+          transform: translateY(-5px);
+      }
+      .button-primary {
+          background-color: #f59e0b; /* Amber 500 */
+          color: #1f2937; /* Gray 800 */
+          font-weight: 600; /* semibold */
+          padding: 0.75rem 1.5rem; /* py-3 px-6 */
+          border-radius: 0.5rem; /* rounded-lg */
+          transition: background-color 0.3s ease;
+          display: inline-block;
+          text-align: center;
+      }
+      .button-primary:hover {
+          background-color: #d97706; /* Amber 600 */
+      }
+       .button-secondary {
+          background-color: #374151; /* Gray 700 */
+          color: white;
+          font-weight: 500; /* medium */
+          padding: 0.5rem 1rem; /* py-2 px-4 */
+          border-radius: 0.5rem; /* rounded-lg */
+          transition: background-color 0.3s ease;
+          display: inline-block;
+          text-align: center;
+      }
+      .button-secondary:hover {
+          background-color: #4b5563; /* Gray 600 */
+      }
+      .section-bg-light {
+          background-color: #e5e7eb; /* Gray 200 */
+      }
+      .section-bg-white {
+          background-color: white;
+      }
+      .donation-section {
+        background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://placehold.co/1200x400/a16207/ffffff?text=Community+Support') center/cover no-repeat;
+        color: white;
+      }
+      .footer-bg {
+          background-color: #111827; /* Gray 900 */
+          color: #9ca3af; /* Gray 400 */
+      }
+      .carousel-indicators button {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background-color: #9ca3af; /* Gray 400 */
+          margin: 0 4px;
+          border: none;
+          cursor: pointer;
+      }
+      .carousel-indicators button.active {
+          background-color: #f59e0b; /* Amber 500 */
+      }
+      .face-placeholder {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background-color: #d1d5db; /* Gray 300 */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #6b7280; /* Gray 500 */
+          font-size: 0.75rem; /* text-xs */
+          overflow: hidden; /* Ensure image fits */
+      }
+       .face-placeholder img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+      }
+    </style>
+</head>
+<body>
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-gray-800">Bethlehem</a>
+
+            <div class="hidden md:flex space-x-6">
+                <a href="#about" class="text-gray-600 hover:text-amber-500 transition duration-300">About Us</a>
+                <a href="#pages" class="text-gray-600 hover:text-amber-500 transition duration-300">Pages</a>
+                <a href="#sermons" class="text-gray-600 hover:text-amber-500 transition duration-300">Sermons</a>
+                <a href="#events" class="text-gray-600 hover:text-amber-500 transition duration-300">Events</a>
+                <a href="#donations" class="text-gray-600 hover:text-amber-500 transition duration-300">Donations</a>
+            </div>
+
+            <button class="md:hidden text-gray-600">
+                <span class="lucide text-2xl">&#xe9a8;</span> </button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-section text-center py-24 px-4">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4 uppercase tracking-wider">Changing School Culture</h1>
+            <p class="text-xl md:text-2xl mb-8 text-gray-300">With Pastor Eric</p>
+            <div class="carousel-indicators flex justify-center mb-8">
+                <button class="active"></button>
+                <button></button>
+                <button></button>
+            </div>
+        </section>
+
+        <section class="py-16 px-4 section-bg-white">
+            <div class="container mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="card">
+                    <img src="https://placehold.co/600x400/fbbf24/4b5563?text=Hands+Praying" alt="Honor the God in Your Heart" class="w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found'">
+                    <div class="p-6">
+                        <h3 class="font-semibold text-lg mb-2 text-gray-800">Honor the God in Your Heart</h3>
+                        <p class="text-gray-600 text-sm mb-4">Victoria</p>
+                        <div class="carousel-indicators flex justify-center">
+                            <button class="active"></button><button></button><button></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="https://placehold.co/600x400/a3e635/4b5563?text=Beach+Scene" alt="More food for Victoria" class="w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found'">
+                    <div class="p-6">
+                        <h3 class="font-semibold text-lg mb-2 text-gray-800">More food for Victoria</h3>
+                        <p class="text-gray-600 text-sm mb-4">Community Outreach</p>
+                         <div class="carousel-indicators flex justify-center">
+                            <button></button><button class="active"></button><button></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="https://placehold.co/600x400/60a5fa/4b5563?text=Open+Book" alt="Michael Hero Story" class="w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found'">
+                    <div class="p-6">
+                        <h3 class="font-semibold text-lg mb-2 text-gray-800">Michael Hero Story</h3>
+                        <p class="text-gray-600 text-sm mb-4">Testimonies</p>
+                         <div class="carousel-indicators flex justify-center">
+                            <button></button><button></button><button class="active"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="https://placehold.co/600x400/f472b6/4b5563?text=Hands+Together" alt="The promise sermons" class="w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found'">
+                    <div class="p-6">
+                        <h3 class="font-semibold text-lg mb-2 text-gray-800">The promise sermons</h3>
+                        <p class="text-gray-600 text-sm mb-4">Sermon Series</p>
+                         <div class="carousel-indicators flex justify-center">
+                            <button class="active"></button><button></button><button></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-12">
+                <a href="#archive" class="button-secondary">See the archive</a>
+            </div>
+        </section>
+
+         <section class="py-12 px-4 section-bg-light">
+            <div class="container mx-auto flex items-center justify-center space-x-4 overflow-x-auto">
+                 <button class="text-gray-500 text-2xl">&lt;</button>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P1" alt="Person 1" onerror="this.parentElement.innerHTML = 'P1'"></div>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P2" alt="Person 2" onerror="this.parentElement.innerHTML = 'P2'"></div>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P3" alt="Person 3" onerror="this.parentElement.innerHTML = 'P3'"></div>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P4" alt="Person 4" onerror="this.parentElement.innerHTML = 'P4'"></div>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P5" alt="Person 5" onerror="this.parentElement.innerHTML = 'P5'"></div>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P6" alt="Person 6" onerror="this.parentElement.innerHTML = 'P6'"></div>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P7" alt="Person 7" onerror="this.parentElement.innerHTML = 'P7'"></div>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P8" alt="Person 8" onerror="this.parentElement.innerHTML = 'P8'"></div>
+                 <div class="face-placeholder"><img src="https://placehold.co/60x60/cccccc/ffffff?text=P9" alt="Person 9" onerror="this.parentElement.innerHTML = 'P9'"></div>
+                 <button class="text-gray-500 text-2xl">&gt;</button>
+            </div>
+        </section>
+
+        <section id="donations" class="donation-section py-20 px-4 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4 uppercase">Education Books for Poor Kids</h2>
+            <p class="text-5xl md:text-6xl font-bold text-amber-400 mb-8">$ 54,971</p>
+            <a href="#donate-now" class="button-primary">Donate now</a>
+        </section>
+
+        <section id="sermons" class="py-16 px-4 section-bg-white">
+            <div class="container mx-auto text-center">
+                <h2 class="text-3xl font-semibold mb-4 text-gray-800">SERMONS</h2>
+                 <div class="flex justify-center items-center mb-8">
+                    <button class="text-gray-500 text-2xl mr-4">&lt;</button>
+                    <img src="https://placehold.co/300x200/84cc16/4b5563?text=Sermon+Art" alt="Walking In The Footsteps Of Faith" class="rounded-lg shadow-md inline-block" onerror="this.src='https://placehold.co/300x200/cccccc/ffffff?text=Image+Not+Found'">
+                    <button class="text-gray-500 text-2xl ml-4">&gt;</button>
+                 </div>
+                 <h3 class="text-xl font-medium text-gray-700 mb-4">Walking In The Footsteps Of Faith</h3>
+                 <div class="carousel-indicators flex justify-center">
+                    <button></button><button class="active"></button><button></button>
+                 </div>
+            </div>
+        </section>
+
+        <section class="py-16 px-4 section-bg-light">
+            <div class="container mx-auto text-center">
+                <h2 class="text-3xl font-semibold mb-10 text-gray-800">OUR CHARITY STORE</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+                    <div class="card p-4 text-center">
+                        <img src="https://placehold.co/200x150/f87171/4b5563?text=Item+1" alt="Store Item 1" class="w-full h-36 object-cover mb-4 rounded" onerror="this.src='https://placehold.co/200x150/cccccc/ffffff?text=Item+Not+Found'">
+                        <h4 class="font-medium text-gray-700 mb-1">The Easter Story</h4>
+                        <p class="text-amber-600 font-semibold mb-3">$15.00 <span class="text-gray-400 line-through ml-1">$18.00</span></p>
+                        <a href="#" class="button-primary text-sm py-2 px-4">Add to Cart</a>
+                    </div>
+                     <div class="card p-4 text-center">
+                        <img src="https://placehold.co/200x150/34d399/4b5563?text=Item+2" alt="Store Item 2" class="w-full h-36 object-cover mb-4 rounded" onerror="this.src='https://placehold.co/200x150/cccccc/ffffff?text=Item+Not+Found'">
+                        <h4 class="font-medium text-gray-700 mb-1">Baseball Cap</h4>
+                        <p class="text-amber-600 font-semibold mb-3">$19.00</p>
+                        <a href="#" class="button-primary text-sm py-2 px-4">Add to Cart</a>
+                    </div>
+                     <div class="card p-4 text-center">
+                        <img src="https://placehold.co/200x150/facc15/4b5563?text=Item+3" alt="Store Item 3" class="w-full h-36 object-cover mb-4 rounded" onerror="this.src='https://placehold.co/200x150/cccccc/ffffff?text=Item+Not+Found'">
+                        <h4 class="font-medium text-gray-700 mb-1">Bible Study Guide</h4>
+                        <p class="text-amber-600 font-semibold mb-3">$22.00</p>
+                        <a href="#" class="button-primary text-sm py-2 px-4">Add to Cart</a>
+                    </div>
+                     <div class="card p-4 text-center">
+                        <img src="https://placehold.co/200x150/93c5fd/4b5563?text=Item+4" alt="Store Item 4" class="w-full h-36 object-cover mb-4 rounded" onerror="this.src='https://placehold.co/200x150/cccccc/ffffff?text=Item+Not+Found'">
+                        <h4 class="font-medium text-gray-700 mb-1">Faith Mug</h4>
+                        <p class="text-amber-600 font-semibold mb-3">$11.99</p>
+                        <a href="#" class="button-primary text-sm py-2 px-4">Add to Cart</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer-bg pt-12 pb-8 px-4">
+        <div class="container mx-auto text-center">
+             <a href="#" class="text-xl font-bold text-white mb-6 inline-block">Bethlehem</a>
+            <p class="text-sm mb-2">123 Church Street, Juja Town, Kiambu County, Kenya</p>
+            <p class="text-sm mb-6">Phone: +254 700 123 456 | Email: info@bethlehemjuja.org</p>
+            <p class="text-xs">&copy; 2025 Bethlehem Church. All rights reserved. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+{% extends "research_dashboard/base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title">{{ action }} Evaluation</h3>
+        <form method="post">
+            {% csrf_token %}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Project Title</label>
+                    {{ form.title }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Status</label>
+                    {{ form.status }}
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                {{ form.description }}
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">End Date</label>
+                    {{ form.end_date }}
+                </div>
+            </div>
+            <div class="text-end">
+                <a href="{% if action == 'Update' %}{% url 'project_detail' project.id %}{% else %}{% url 'dashboard' %}{% endif %}" 
+                   class="btn btn-light me-2">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    {{ action }} Evaluation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

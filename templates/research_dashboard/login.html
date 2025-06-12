@@ -1,0 +1,246 @@
+{% extends "research_dashboard/public_base.html" %}
+{% load static %}
+
+{% block title %}Log In | ResearchEval{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Apply the gradient background to the entire page body */
+    body {
+        background: linear-gradient(135deg, #f0f2f5 0%, #e6e9ff 100%);
+        min-height: 100vh;
+    }
+    
+    /* --- Navbar Styles --- */
+    .navbar {
+        background-color: rgba(255, 255, 255, 0.8) !important; /* Semi-transparent white */
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .navbar-brand {
+        font-weight: 600;
+        color: #43467f !important;
+    }
+    .nav-link {
+        color: #555 !important;
+        font-weight: 500;
+    }
+    .btn-demo {
+        background-color: #6366f1;
+        border-color: #6366f1;
+        color: white;
+        border-radius: 8px;
+    }
+    .btn-demo:hover {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+    }
+
+    /* --- Login Section Styles --- */
+    .login-section {
+        padding: 1rem 1rem;
+    }
+    .login-card {
+        border-radius: 16px;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .login-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    .login-header {
+        background: linear-gradient(to right, #6366f1, #818cf8);
+        padding: 2rem;
+        text-align: center;
+    }
+    .login-logo {
+        width: 80px;
+        height: 80px;
+        background-color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .login-logo i {
+        font-size: 2.5rem;
+        color: #6366f1;
+    }
+    .login-body {
+        padding: 2.5rem;
+        background-color: white;
+    }
+    .form-control-lg {
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid #e0e0e0;
+    }
+    .form-control-lg:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    }
+    .btn-login {
+        background: linear-gradient(to right, #6366f1, #818cf8);
+        border: none;
+        border-radius: 10px;
+        padding: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s;
+    }
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+    }
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 1.5rem 0;
+        color: #9ca3af;
+    }
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .divider:not(:empty)::before {
+        margin-right: 1em;
+    }
+    .divider:not(:empty)::after {
+        margin-left: 1em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="mdi mdi-flask-outline me-2"></i>ResearchEval
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About Us</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Features</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <a href="#" class="nav-link me-3">Log In</a>
+                <a href="#" class="btn btn-demo">Request a Demo</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Login Content -->
+<div class="login-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6 col-xl-5">
+                <div class="login-card">
+                    <div class="login-header">
+                        <div class="login-logo">
+                            <i class="mdi mdi-flask-outline"></i>
+                        </div>
+                        <h2 class="text-white mb-0">Welcome Back</h2>
+                        <p class="text-light mb-1">Sign in to continue to ResearchEval</p>
+                        <h4 class="text-white mb-0">Log In to ResearchEval</h4>
+                    </div>
+                    <div class="login-body">
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            
+                            {% if form.errors %}
+                            <div class="alert alert-danger">
+                                Invalid username or password. Please try again.
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-4">
+                                <label for="username" class="form-label">Username</label>
+                                <!-- FIXED: Use placeholder instead of value -->
+                                <input type="text" name="username" class="form-control form-control-lg" id="username" placeholder="" required autocomplete="username">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <!-- FIXED: Use placeholder instead of value -->
+                                    <input type="password" name="password" class="form-control form-control-lg" id="password" placeholder="" required autocomplete="current-password">
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="mdi mdi-eye-off" id="passwordIcon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 mb-4">
+                                <button type="submit" class="btn btn-primary btn-lg btn-login">Log In</button>
+                            </div>
+                            
+                            <div class="divider">or</div>
+                            
+                            <div class="text-center">
+                                <p class="mb-3">Don't have an account? <a href="#" class="text-primary text-decoration-none fw-medium">Request access</a></p>
+                                <a href="#" class="text-decoration-none d-block text-muted">Forgot password?</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+(function () {
+  'use strict'
+  const forms = document.querySelectorAll('.needs-validation')
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      form.classList.add('was-validated')
+    }, false)
+  })
+})()
+</script>
+
+<script>
+// Password visibility toggle (this script was already correct)
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordInput = document.getElementById('password');
+    const icon = document.getElementById('passwordIcon');
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    
+    // Toggle icon
+    if (type === 'password') {
+        icon.classList.remove('mdi-eye');
+        icon.classList.add('mdi-eye-off');
+    } else {
+        icon.classList.remove('mdi-eye-off');
+        icon.classList.add('mdi-eye');
+    }
+});
+</script>
+{% endblock %}

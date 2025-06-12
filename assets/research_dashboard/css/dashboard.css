@@ -1,0 +1,45 @@
+/* Card styles */
+.clickable-card {
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.active-filter {
+    border-color: var(--bs-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Loading state styles */
+.table-loading {
+    position: relative;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+/* Empty state styles */
+.alert-info {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #495057;
+    padding: 1rem;
+    margin-bottom: 0;
+}
+
+/* Pagination styles */
+.pagination {
+    margin-top: 1rem;
+}

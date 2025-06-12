@@ -1,0 +1,37 @@
+{% load static %}
+
+<footer class="footer py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 mb-4 mb-lg-0">
+                <h5 class="footer-title d-flex align-items-center"><i class="mdi mdi-flask-outline me-2"></i>ResearchEval</h5>
+                <p class="pe-4">The central nervous system for research at the Centre for Healthcare and Innovation.</p>
+                <p class="small">© {% now "Y" %} UoN. All Rights Reserved.</p>
+            </div>
+            <div class="col-6 col-lg-2 offset-lg-1 mb-4 mb-lg-0">
+                <h6 class="footer-title">Product</h6>
+                <ul class="list-unstyled">
+                    <li><a href="/#features">Features</a></li>
+                    <li><a href="#">Security</a></li>
+                    <li><a href="{% url 'about' %}#contact">Contact</a></li>
+                </ul>
+            </div>
+            <div class="col-6 col-lg-2 mb-4 mb-lg-0">
+                <h6 class="footer-title">Resources</h6>
+                <ul class="list-unstyled">
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">API Docs</a></li>
+                    <li><a href="#">System Status</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3">
+                <h6 class="footer-title">Centre for Healthcare & Innovation</h6>
+                <p class="small">University of Nairobi, College of Health Sciences, Nairobi, Kenya</p>
+                <div class="d-flex gap-3">
+                    <a href="#"><i class="mdi mdi-twitter fs-5"></i></a>
+                    <a href="#"><i class="mdi mdi-linkedin fs-5"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>

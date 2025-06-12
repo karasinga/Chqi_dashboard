@@ -1,0 +1,96 @@
+/* --- Refinements for Phases/Milestones Lists (VERY COMPACT) --- */
+.phase-milestone-list .list-group-item {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #f0f0f0 !important;
+}
+.phase-milestone-list .list-group-item:last-child {
+    border-bottom: none !important;
+}
+
+.phase-milestone-list .item-content {
+    min-width: 0;
+    margin-right: 0.5rem;
+    overflow: hidden;
+}
+
+.phase-milestone-list .item-content strong {
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.phase-milestone-list .item-content .text-muted {
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+/* --- Adjustments to Actions Area --- */
+.phase-milestone-list .item-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* Badge adjustments */
+.phase-milestone-list .badge {
+    font-size: 0.65rem;
+    padding: 0.15em 0.4em;
+    flex-shrink: 0;
+    height: fit-content;
+    line-height: 1.2;
+}
+
+/* Button Group adjustments */
+.phase-milestone-list .btn-group {
+    flex-shrink: 0;
+    margin: 0;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+
+.phase-milestone-list .btn-group .btn {
+    border-radius: 0 !important;
+    border: none !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+    padding: 0.1rem 0.25rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    color: #6c757d;
+}
+
+.phase-milestone-list .btn-group .btn:last-child {
+    border-right: none !important;
+}
+
+.phase-milestone-list .btn-group .btn:hover {
+    background-color: #f8f9fa;
+}
+
+.phase-milestone-list .btn-group .btn:focus {
+    box-shadow: none;
+}
+
+.phase-milestone-list .btn-group .btn.btn-outline-danger {
+    color: #dc3545;
+}
+
+.phase-milestone-list .btn-group .btn.btn-outline-danger:hover {
+    color: #fff;
+    background-color: #dc3545;
+}
+
+.phase-milestone-list .btn-group .btn i {
+    font-size: 0.9em;
+    margin: 0;
+    display: block;
+    line-height: 1;
+}

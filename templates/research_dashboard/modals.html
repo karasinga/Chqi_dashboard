@@ -1,0 +1,91 @@
+<!-- Evaluation Modal -->
+<div class="modal fade" id="evaluationModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="modalTitle">Create New Evaluation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <form id="evaluationForm" method="post" action="{% url 'dashboard' %}">
+                    <input type="hidden" name="project_id" id="projectId" value="">
+                    {% csrf_token %}
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Project Title</label>
+                            <input type="text" class="form-control form-control-lg rounded-3" name="title" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Lead Researcher</label>
+                            <select class="form-select form-select-lg rounded-3" name="lead_researcher">
+                                <option value="">Select Researcher</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Status</label>
+                            <select class="form-select form-select-lg rounded-3" name="status">
+                                {% for value, label in status_options %}
+                                    <option value="{{ value }}" {% if value == 'active' %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea class="form-control form-control-lg rounded-3" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Start Date</label>
+                            <input type="date" class="form-control form-control-lg rounded-3" name="start_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">End Date</label>
+                            <input type="date" class="form-control form-control-lg rounded-3" name="end_date">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-top-0 px-4 py-3">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            Save Evaluation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Confirm Deletion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <p>Are you sure you want to delete "<span id="projectToDelete"></span>"?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer bg-light border-top-0 px-4 py-3">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" action="{% url 'dashboard' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" name="project_id" id="deleteProjectId" value="">
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

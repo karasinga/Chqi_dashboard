@@ -1,0 +1,267 @@
+{% extends "research_dashboard/base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Research Evaluators</h2>
+    
+    <div class="mb-4">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEvaluatorModal">
+            Add New Evaluator
+        </button>
+    </div>
+
+    <!-- Add Evaluator Modal -->
+    <div class="modal fade" id="addEvaluatorModal" tabindex="-1" aria-labelledby="addEvaluatorModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="addEvaluatorModalLabel">Add New Evaluator</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post">
+                    <div class="modal-body px-4 py-3">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="id_name" class="form-label fw-semibold">Name</label>
+                            <input type="text" name="name" class="form-control form-control-lg rounded-3" id="id_name" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="id_email" class="form-label fw-semibold">Email</label>
+                            <input type="email" name="email" class="form-control form-control-lg rounded-3" id="id_email" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="id_phone" class="form-label fw-semibold">Phone</label>
+                            <input type="text" name="phone" class="form-control form-control-lg rounded-3" id="id_phone">
+                        </div>
+                        <div class="mb-4">
+                            <label for="id_projects_add" class="form-label fw-semibold">Projects</label>
+                            <select name="projects" id="id_projects_add" class="form-select form-select-lg select2" multiple="multiple" 
+                                    data-placeholder="Select projects...">
+                                {% for project in form.projects.field.queryset %}
+                                    <option value="{{ project.id }}">{{ project.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-top-0 px-4 py-3">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            Save Evaluator
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<!-- Edit Evaluator Modal -->
+<div class="modal fade" id="editEvaluatorModal" tabindex="-1" aria-labelledby="editEvaluatorModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="editEvaluatorModalLabel">Edit Evaluator</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <!-- IMPORTANT: Action URL is set dynamically by JS -->
+            <form method="post" id="editEvaluatorForm" action="#">
+                <div class="modal-body px-4 py-3">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="edit_id_name" class="form-label fw-semibold">Name</label>
+                        <input type="text" name="name" class="form-control form-control-lg rounded-3" id="edit_id_name" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit_id_email" class="form-label fw-semibold">Email</label>
+                        <input type="email" name="email" class="form-control form-control-lg rounded-3" id="edit_id_email" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit_id_phone" class="form-label fw-semibold">Phone</label>
+                        <input type="text" name="phone" class="form-control form-control-lg rounded-3" id="edit_id_phone" placeholder="+1234567890">
+                    </div>
+                    <div class="mb-4">
+                        <label for="id_projects_edit" class="form-label fw-semibold">Projects</label>
+                        <select name="projects" class="form-select form-select-lg select2" id="id_projects_edit" multiple="multiple" 
+                                data-placeholder="Select projects...">
+                            {% for project in form.projects.field.queryset %}
+                                <option value="{{ project.id }}">{{ project.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0 px-4 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        Update Evaluator
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Assigned Projects</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluator in evaluators %}
+                    <tr>
+                        <td>{{ evaluator.name }}</td>
+                        <td>{{ evaluator.email }}</td>
+                        <td>{{ evaluator.phone }}</td>
+                        <td>
+                            {% for project in evaluator.projects.all %}
+                                {{ project.title }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                None
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary edit-btn" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editEvaluatorModal"
+                                        data-id="{{ evaluator.id }}"
+                                        data-name="{{ evaluator.name }}"
+                                        data-email="{{ evaluator.email }}"
+                                        data-phone="{{ evaluator.phone }}"
+                                        data-projects="{% for p in evaluator.projects.all %}{{ p.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                                    <i class="mdi mdi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-danger delete-btn" onclick="return confirm('Are you sure?')">
+                                    <i class="mdi mdi-delete"></i>
+                                </button>
+                            </div>
+                            <form method="POST" action="{% url 'delete_evaluator' evaluator.id %}" class="d-none" id="deleteForm{{ evaluator.id }}">
+                                {% csrf_token %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">No evaluators found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<!-- Add Select2 CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize Select2 when modals are shown
+    $('#addEvaluatorModal').on('show.bs.modal', function() {
+        var select = $(this).find('select[name="projects"]');
+        if (select.length && !select.hasClass('select2-hidden-accessible')) {
+            select.select2({
+                placeholder: "Select projects...",
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $(this),
+                closeOnSelect: false
+            });
+        }
+    });
+
+    $('#editEvaluatorModal').on('show.bs.modal', function(event) {
+        var modal = $(this);
+        var button = $(event.relatedTarget);
+        
+        // Initialize Select2 if not already done
+        var select = modal.find('select[name="projects"]');
+        if (select.length && !select.hasClass('select2-hidden-accessible')) {
+            select.select2({
+                placeholder: "Select projects...", 
+                allowClear: true,
+                width: '100%',
+                dropdownParent: modal,
+                closeOnSelect: false
+            });
+        }
+
+        // --- Get data from the button ---
+        var evaluatorId = button.data('id');
+        var evaluatorName = button.data('name');
+        var evaluatorEmail = button.data('email');
+        var evaluatorPhone = button.data('phone');
+        // Ensure data-projects is treated as a string before splitting
+        var projectIdsRaw = button.data('projects') + ''; // Convert to string
+        var projectIds = projectIdsRaw.split(',').filter(Boolean); // Filter out empty strings
+
+        console.log('Editing evaluator ID:', evaluatorId);
+        console.log('Data:', { name: evaluatorName, email: evaluatorEmail, phone: evaluatorPhone, projects: projectIds });
+
+        // --- Update form action URL ---
+        var form = modal.find('#editEvaluatorForm');
+        // Construct the URL dynamically using a template URL stored elsewhere or build it manually
+        // Assuming you have a URL pattern named 'edit_evaluator' that takes the ID
+        var actionUrl = "{% url 'edit_evaluator' 0 %}".replace('0', evaluatorId); // Replace placeholder '0'
+        form.attr('action', actionUrl);
+        console.log('Form action set to:', actionUrl);
+
+
+        // --- Populate basic input fields ---
+        modal.find('input[name="name"]').val(evaluatorName);
+        modal.find('input[name="email"]').val(evaluatorEmail);
+        modal.find('input[name="phone"]').val(evaluatorPhone);
+
+        // --- Populate the projects multi-select ---
+        var projectsSelect = modal.find('select[name="projects"]'); // Target select by name within the modal
+        if(projectsSelect.length) {
+            // Clear previous selections
+            projectsSelect.find('option').prop('selected', false);
+
+            // Set current selections
+            if (projectIds.length > 0) {
+                projectIds.forEach(function(projectId) {
+                    projectId = projectId.trim(); // Trim whitespace just in case
+                    if (projectId) { // Check again after trim
+                        var option = projectsSelect.find('option[value="' + projectId + '"]');
+                        if (option.length) {
+                            option.prop('selected', true);
+                            console.log('Selected project option:', projectId);
+                        } else {
+                            console.warn('Project option not found for ID:', projectId);
+                        }
+                    }
+                });
+            } else {
+                 console.log('No projects to select.');
+            }
+            // Refresh Select2 to show selected options
+            projectsSelect.trigger('change.select2');
+        } else {
+             console.error('Could not find projects select element within the modal.');
+        }
+    });
+
+    // Optional: Clear form fields when modal is hidden to avoid stale data flashes
+    $('#editEvaluatorModal').on('hidden.bs.modal', function () {
+        var modal = $(this);
+        modal.find('input[name="name"]').val('');
+        modal.find('input[name="email"]').val('');
+        modal.find('input[name="phone"]').val('');
+        modal.find('select[name="projects"] option').prop('selected', false);
+        modal.find('#editEvaluatorForm').attr('action', '#'); // Reset action
+    });
+});
+</script>
+{% endblock %}

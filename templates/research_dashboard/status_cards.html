@@ -1,0 +1,101 @@
+<!-- Status Summary Cards -->
+<div class="col-md-2">
+    <div class="card bg-white border-0 clickable-card h-100" onclick="applyStatusFilter('')">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2 flex-shrink-0">
+                    <i class="mdi mdi-format-list-numbered text-primary" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 text-muted small">Total Eval</h6>
+                    <h3 class="mb-0 fw-bold">{{ total_projects_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-2">
+    <div class="card bg-white border-0 clickable-card h-100 {% if status_filter == 'active' %}active-filter{% endif %}" 
+         onclick="applyStatusFilter('active')" data-status="active">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2 flex-shrink-0">
+                    <i class="mdi mdi-progress-check text-primary" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 text-muted small">Active</h6>
+                    <h3 class="mb-0 fw-bold">{{ status_counts.active }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-2">
+    <div class="card bg-white border-0 clickable-card h-100 {% if status_filter == 'completed' %}active-filter{% endif %}" 
+         onclick="applyStatusFilter('completed')" data-status="completed">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="bg-success bg-opacity-10 p-2 rounded me-2 flex-shrink-0">
+                    <i class="mdi mdi-check-circle text-success" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 text-muted small">Completed</h6>
+                    <h3 class="mb-0 fw-bold">{{ status_counts.completed }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-2">
+    <div class="card bg-white border-0 clickable-card h-100 {% if status_filter == 'on_hold' %}active-filter{% endif %}" 
+         onclick="applyStatusFilter('on_hold')" data-status="on_hold">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="bg-warning bg-opacity-10 p-2 rounded me-2 flex-shrink-0">
+                    <i class="mdi mdi-pause-circle text-warning" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 text-muted small">On Hold</h6>
+                    <h3 class="mb-0 fw-bold">{{ status_counts.on_hold }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-2">
+    <div class="card bg-white border-0 clickable-card h-100 {% if status_filter == 'planned' %}active-filter{% endif %}" 
+         onclick="applyStatusFilter('planned')" data-status="planned">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="bg-info bg-opacity-10 p-2 rounded me-2 flex-shrink-0">
+                    <i class="mdi mdi-calendar-clock text-info" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 text-muted small">Planned</h6>
+                    <h3 class="mb-0 fw-bold">{{ status_counts.planned }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-2">
+    <div class="card bg-white border-0 clickable-card h-100 {% if status_filter == 'cancelled' %}active-filter{% endif %}" 
+         onclick="applyStatusFilter('cancelled')" data-status="cancelled">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="bg-danger bg-opacity-10 p-2 rounded me-2 flex-shrink-0">
+                    <i class="mdi mdi-cancel text-danger" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 text-muted small">Cancelled</h6>
+                    <h3 class="mb-0 fw-bold">{{ status_counts.cancelled }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

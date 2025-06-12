@@ -1,0 +1,370 @@
+{% extends "research_dashboard/base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Research Evaluations</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newEvaluationModal">
+            <i class="mdi mdi-plus"></i> New Evaluation
+        </button>
+    </div>
+
+    <!-- Evaluation Status Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-start border-primary border-4">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Planning</h6>
+                    <h4 class="mb-0">{{ planning_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-info border-4">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Data Collection</h6>
+                    <h4 class="mb-0">{{ data_collection_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-warning border-4">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Analysis</h6>
+                    <h4 class="mb-0">{{ analysis_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-success border-4">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Completed</h6>
+                    <h4 class="mb-0">{{ completed_count }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Healthcare-Specific Metrics -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Healthcare Evaluation Metrics</h5>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="metricsDropdown" data-bs-toggle="dropdown">
+                    Last 6 Months
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">Last Month</a></li>
+                    <li><a class="dropdown-item" href="#">Last 3 Months</a></li>
+                    <li><a class="dropdown-item" href="#">Last Year</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id="patientOutcomesChart" height="250"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id="complianceChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Evaluations Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Active Evaluations</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Phase</th>
+                            <th>Start Date</th>
+                            <th>Patient Outcomes</th>
+                            <th>Compliance</th>
+                            <th>Safety</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evaluation in active_evaluations %}
+                        <tr>
+                            <td>{{ evaluation.project.title }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if evaluation.phase == 'Planning' %}bg-primary
+                                    {% elif evaluation.phase == 'Data Collection' %}bg-info
+                                    {% elif evaluation.phase == 'Analysis' %}bg-warning
+                                    {% else %}bg-success{% endif %}">
+                                    {{ evaluation.phase }}
+                                </span>
+                            </td>
+                            <td>{{ evaluation.start_date|date:"Y-m-d" }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ evaluation.patient_outcomes }}%" 
+                                         aria-valuenow="{{ evaluation.patient_outcomes }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ evaluation.patient_outcomes }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                         style="width: {{ evaluation.compliance }}%" 
+                                         aria-valuenow="{{ evaluation.compliance }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ evaluation.compliance }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar 
+                                        {% if evaluation.safety < 50 %}bg-danger
+                                        {% elif evaluation.safety < 80 %}bg-warning
+                                        {% else %}bg-success{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {{ evaluation.safety }}%" 
+                                        aria-valuenow="{{ evaluation.safety }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="100">
+                                        {{ evaluation.safety }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'evaluation_detail' evaluation.id %}" class="btn btn-outline-primary">
+                                        <i class="mdi mdi-eye"></i>
+                                    </a>
+                                    <button class="btn btn-outline-secondary edit-btn" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editEvaluationModal"
+                                            data-id="{{ evaluation.id }}">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No active evaluations found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Evaluation Modal -->
+<div class="modal fade" id="newEvaluationModal" tabindex="-1" aria-labelledby="newEvaluationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="newEvaluationModalLabel">New Evaluation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'create_evaluation' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_project" class="form-label">Project</label>
+                            <select class="form-select" id="id_project" name="project" required>
+                                <option value="" selected disabled>Select project</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_phase" class="form-label">Phase</label>
+                            <select class="form-select" id="id_phase" name="phase" required>
+                                <option value="" selected disabled>Select phase</option>
+                                <option value="Planning">Planning</option>
+                                <option value="Data Collection">Data Collection</option>
+                                <option value="Analysis">Analysis</option>
+                                <option value="Reporting">Reporting</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="id_start_date" name="start_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_end_date" class="form-label">Target End Date</label>
+                            <input type="date" class="form-control" id="id_end_date" name="end_date">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_objectives" class="form-label">Objectives</label>
+                        <textarea class="form-control" id="id_objectives" name="objectives" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Healthcare Focus Areas</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="id_patient_outcomes" name="focus_areas" value="patient_outcomes" checked>
+                            <label class="form-check-label" for="id_patient_outcomes">Patient Outcomes</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="id_compliance" name="focus_areas" value="compliance" checked>
+                            <label class="form-check-label" for="id_compliance">Compliance</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="id_safety" name="focus_areas" value="safety" checked>
+                            <label class="form-check-label" for="id_safety">Safety</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="id_efficacy" name="focus_areas" value="efficacy">
+                            <label class="form-check-label" for="id_efficacy">Efficacy</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Evaluation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Evaluation Modal -->
+<div class="modal fade" id="editEvaluationModal" tabindex="-1" aria-labelledby="editEvaluationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editEvaluationModalLabel">Edit Evaluation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="editEvaluationForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Content will be loaded dynamically via JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize charts
+    const patientOutcomesCtx = document.getElementById('patientOutcomesChart').getContext('2d');
+    const patientOutcomesChart = new Chart(patientOutcomesCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Improved', 'Stable', 'Worsened', 'N/A'],
+            datasets: [{
+                label: 'Patient Outcomes',
+                data: [65, 20, 10, 5],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(201, 203, 207, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(201, 203, 207, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Patient Outcomes Distribution'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    const complianceCtx = document.getElementById('complianceChart').getContext('2d');
+    const complianceChart = new Chart(complianceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Fully Compliant', 'Partially Compliant', 'Non-Compliant'],
+            datasets: [{
+                label: 'Compliance Status',
+                data: [70, 20, 10],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(255, 205, 86, 0.7)',
+                    'rgba(255, 99, 132, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 205, 86, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                title: {
+                    display: true,
+                    text: 'Protocol Compliance'
+                }
+            }
+        }
+    });
+
+    // Edit evaluation modal handling
+    $('#editEvaluationModal').on('show.bs.modal', function(event) {
+        var button = $(event.relatedTarget);
+        var evaluationId = button.data('id');
+        var modal = $(this);
+
+        // Load evaluation data via AJAX
+        $.get(`/evaluations/${evaluationId}/edit/`, function(data) {
+            modal.find('.modal-body').html(data);
+        }).fail(function() {
+            modal.find('.modal-body').html('<div class="alert alert-danger">Failed to load evaluation data</div>');
+        });
+
+        // Update form action
+        modal.find('form').attr('action', `/evaluations/${evaluationId}/update/`);
+    });
+});
+</script>
+{% endblock %}

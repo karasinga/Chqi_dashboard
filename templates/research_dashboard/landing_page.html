@@ -1,0 +1,391 @@
+{% extends "research_dashboard/public_base.html" %}
+{% load static %}
+
+{% block title %}ResearchEval | The Operating System for Modern Research{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* --- Global & Animation --- */
+    :root {
+        --primary-color: #6366f1;
+        --primary-light: #818cf8;
+        --dark-color: #111827;
+        --light-gray: #f9fafb;
+        --text-muted: #6b7280;
+    }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+
+    /* Simple fade-in animation for sections */
+    .scroll-animate {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .scroll-animate.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+
+    /* --- Login Modal Styles (Unchanged but retained for completeness) --- */
+    #loginModal .modal-content { border-radius: 15px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+    #loginModal .modal-header { background: linear-gradient(to right, var(--primary-color), var(--primary-light)); color: white; border-bottom: none; padding: 1.5rem; }
+    #loginModal .modal-title { font-weight: 600; font-size: 1.5rem; }
+    #loginModal .modal-body { padding: 2rem; }
+    #loginModal .form-label { font-weight: 500; color: #4b5563; margin-bottom: 0.5rem; }
+    #loginModal .form-control { border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; transition: all 0.2s; }
+    #loginModal .form-control:focus { border-color: var(--primary-light); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); }
+    #loginModal .btn-login { background: linear-gradient(to right, var(--primary-color), var(--primary-light)); border: none; padding: 0.75rem; border-radius: 8px; font-weight: 600; transition: all 0.2s; }
+    #loginModal .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25); }
+    #loginModal .modal-footer { border-top: none; padding: 0 2rem 2rem; justify-content: center; }
+    #loginModal .forgot-password { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+
+    /* --- Hero Section --- */
+    .hero {
+        padding: 10rem 0 8rem 0;
+        position: relative;
+        background-color: var(--dark-color);
+        color: white;
+        overflow: hidden; /* Contain pseudo-elements */
+    }
+    .hero::before { /* Abstract background grid */
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 4rem 4rem;
+        z-index: 0;
+    }
+    .hero::after { /* Radial gradient glow */
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        height: 80%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(17, 24, 39, 0) 70%);
+        z-index: 0;
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .hero .badge { background-color: rgba(99, 102, 241, 0.15); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.4); font-weight: 500; }
+    .hero h1 { color: #fff; }
+    .hero .lead { color: #d1d5db; }
+    .hero .btn-primary { background: linear-gradient(to right, var(--primary-color), var(--primary-light)); border: none; transition: all 0.2s ease; padding: 0.8rem 2.5rem; font-weight: 600; }
+    .hero .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25); }
+    .hero-glass-btn { /* Modern glassmorphism button */
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 0.8rem 2.5rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transition: all 0.2s ease;
+        font-weight: 600;
+    }
+    .hero-glass-btn:hover { background-color: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.3); transform: translateY(-3px); }
+
+
+    /* --- Interactive Features Section --- */
+    .section-eyebrow { color: var(--primary-color); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    #how-it-works .nav-pills .nav-link {
+        padding: 1.25rem 1.5rem;
+        background-color: #fff;
+        color: #374151;
+        font-weight: 600;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        text-align: left;
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+    }
+    #how-it-works .nav-pills .nav-link.active {
+        background-color: #f0f1ff;
+        color: var(--primary-color);
+        border-color: #e0e2ff;
+        border-left: 4px solid var(--primary-color);
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1);
+        transform: translateX(5px);
+    }
+    #how-it-works .nav-pills .nav-link .feature-desc { font-size: 0.9rem; font-weight: 400; color: var(--text-muted); }
+    #how-it-works .tab-content .browser-frame {
+        border-radius: 0.75rem;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+    #how-it-works .tab-content .browser-header {
+        background: #f3f4f6; padding: 0.75rem; border-bottom: 1px solid #e5e7eb;
+    }
+    .feature-icon-sm { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; background: linear-gradient(to right, #eef2ff, #f0f1ff); border-radius: 10px; color: var(--primary-color); font-size: 1.5rem; margin-right: 1rem; }
+
+    /* --- Core Features Grid Section --- */
+    .feature-card {
+        background-color: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        padding: 2rem;
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.07);
+        border-color: #c7d2fe;
+    }
+    .feature-card .icon-box {
+        display: inline-flex;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        background-color: #eef2ff;
+        color: var(--primary-color);
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* --- Testimonial Section --- */
+    .testimonial-section { background-color: var(--light-gray); padding: 6rem 0; }
+    .testimonial-card {
+        background-color: #fff;
+        padding: 3rem;
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
+        position: relative;
+    }
+    .testimonial-card .quote-icon {
+        position: absolute;
+        top: -1.5rem;
+        left: 2rem;
+        font-size: 5rem;
+        color: #eef2ff;
+        line-height: 1;
+        z-index: 0;
+    }
+    .testimonial-card blockquote, .testimonial-card cite { position: relative; z-index: 1; }
+    .testimonial-card blockquote { font-size: 1.5rem; font-weight: 500; line-height: 1.6; }
+    .testimonial-card cite { color: var(--text-muted); }
+
+    /* --- Final CTA Section --- */
+    .cta-section { padding: 6rem 0; background-color: #fff; }
+    .cta-card {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #4f46e5 100%);
+        color: white;
+        padding: 4rem;
+        border-radius: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.35);
+    }
+    /* Abstract background shapes for CTA */
+    .cta-card::before, .cta-card::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.1;
+        z-index: 0;
+    }
+    .cta-card::before {
+        width: 300px;
+        height: 300px;
+        background-color: #fff;
+        top: -100px;
+        right: -100px;
+    }
+    .cta-card::after {
+        width: 200px;
+        height: 200px;
+        background-color: #fff;
+        bottom: -80px;
+        left: -80px;
+    }
+    .cta-card > * { position: relative; z-index: 1; }
+    .cta-card h2 { color: #fff; }
+    .cta-card p { color: #e0e7ff; }
+    .cta-card .btn-light { background-color: #fff; color: var(--primary-color); border: none; padding: 0.8rem 2.5rem; font-weight: 600; }
+    .cta-card .btn-light-outline { background-color: transparent; border: 2px solid rgba(255, 255, 255, 0.5); color: #fff; padding: 0.8rem 2.5rem; font-weight: 600; transition: all 0.2s ease; }
+    .cta-card .btn-light-outline:hover { background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.8); }
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main>
+    <!-- Hero Section -->
+    <section class="hero text-center" id="home">
+        <div class="hero-content container">
+            <span class="badge rounded-pill px-3 py-2 mb-4">For The University of Nairobi</span>
+            <h1 class="display-3 fw-bold mb-4">The Operating System<br>for Modern Research</h1>
+            <p class="lead mx-auto mb-5" style="max-width: 650px;">Move beyond scattered data. ResearchEval provides a unified platform to manage projects, track progress, and generate insights—empowering you to accelerate discovery.</p>
+            <div class="d-grid gap-3 d-sm-flex justify-content-center">
+                <a href="#cta" class="btn btn-primary btn-lg">Request a Demo</a>
+                <a href="{% url 'login' %}" class="btn hero-glass-btn btn-lg">Log In</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partners Section -->
+    {% include 'research_dashboard/partials/partners and donors.html' %}
+
+    <!-- Interactive Features Section -->
+    <section id="features" class="py-5 my-5">
+        <div class="container">
+            <div class="text-center mb-5 pb-3 scroll-animate">
+                <span class="section-eyebrow">A Unified Workflow</span>
+                <h2 class="display-5 fw-bold mt-2">Everything you need. Nothing you don’t.</h2>
+                <p class="lead text-muted mx-auto" style="max-width: 700px;">From ideation to publication, our features are designed to remove friction from your research process.</p>
+            </div>
+            <div class="row g-5 align-items-center" id="how-it-works">
+                <div class="col-lg-4 scroll-animate">
+                    <!-- Nav Pills -->
+                    <div class="nav flex-column nav-pills" role="tablist" aria-orientation="vertical">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#v-pills-dashboard" type="button" role="tab">
+                            <div class="d-flex"><i class="feature-icon-sm mdi mdi-view-dashboard-variant-outline"></i>
+                                <div><strong>Centralize Projects</strong><div class="feature-desc">Aggregate all your studies into one command center.</div></div>
+                            </div>
+                        </button>
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#v-pills-analytics" type="button" role="tab">
+                             <div class="d-flex"><i class="feature-icon-sm mdi mdi-chart-donut"></i>
+                                <div><strong>Visualize Impact</strong><div class="feature-desc">Track KPIs and outcomes with intuitive dashboards.</div></div>
+                            </div>
+                        </button>
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#v-pills-reporting" type="button" role="tab">
+                             <div class="d-flex"><i class="feature-icon-sm mdi mdi-file-document-outline"></i>
+                                <div><strong>Generate Reports</strong><div class="feature-desc">Create donor-ready reports in a single click.</div></div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-8 scroll-animate" style="transition-delay: 150ms;">
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="v-pills-dashboard" role="tabpanel">
+                            <div class="browser-frame">
+                                <div class="browser-header"><i class="mdi mdi-circle text-danger me-1"></i><i class="mdi mdi-circle text-warning me-1"></i><i class="mdi mdi-circle text-success"></i></div>
+                                <img src="{% static 'images/Centralized projects.png' %}" class="img-fluid" alt="Dashboard View">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="v-pills-analytics" role="tabpanel">
+                             <div class="browser-frame">
+                                <div class="browser-header"><i class="mdi mdi-circle text-danger me-1"></i><i class="mdi mdi-circle text-warning me-1"></i><i class="mdi mdi-circle text-success"></i></div>
+                                <img src="{% static 'images/Visualize impact.png' %}" class="img-fluid" alt="Analytics View">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="v-pills-reporting" role="tabpanel">
+                             <div class="browser-frame">
+                                <div class="browser-header"><i class="mdi mdi-circle text-danger me-1"></i><i class="mdi mdi-circle text-warning me-1"></i><i class="mdi mdi-circle text-success"></i></div>
+                                <img src="{% static 'images/Generate reports.png' %}" class="img-fluid" alt="Reporting View">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW: Core Features Grid -->
+    <section class="py-5 bg-light">
+        <div class="container my-5">
+            <div class="text-center mb-5 pb-3 scroll-animate">
+                <span class="section-eyebrow">Built for the Entire Research Lifecycle</span>
+                <h2 class="display-5 fw-bold mt-2">A Powerful, Flexible Toolset</h2>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4 d-flex scroll-animate">
+                    <div class="feature-card">
+                        <div class="icon-box"><i class="mdi mdi-account-group-outline"></i></div>
+                        <h4 class="fw-bold mb-2">Team Collaboration</h4>
+                        <p class="text-muted">Manage roles, permissions, and tasks across multiple research teams and departments seamlessly.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 d-flex scroll-animate" style="transition-delay: 100ms;">
+                    <div class="feature-card">
+                        <div class="icon-box"><i class="mdi mdi-finance"></i></div>
+                        <h4 class="fw-bold mb-2">Budget Tracking</h4>
+                        <p class="text-muted">Monitor grants, allocate funds, and track expenditures against project milestones in real-time.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 d-flex scroll-animate" style="transition-delay: 200ms;">
+                    <div class="feature-card">
+                        <div class="icon-box"><i class="mdi mdi-file-find-outline"></i></div>
+                        <h4 class="fw-bold mb-2">Publication Archiving</h4>
+                        <p class="text-muted">Create a central, searchable repository of all published papers, articles, and conference proceedings.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial Section -->
+    <section class="testimonial-section scroll-animate">
+        <div class="container" style="max-width: 800px;">
+            <div class="testimonial-card text-center">
+                 <div class="quote-icon"><i class="mdi mdi-format-quote-open"></i></div>
+                 <img src="https://via.placeholder.com/80" alt="Prof. Stephen Kiama" class="rounded-circle mb-4" style="width: 80px; height: 80px; object-fit: cover;">
+                 <blockquote class="mb-4">"The University of Nairobi is one of the universities selected by donors to accelerate research on health and innovation. Tools like ResearchEval are essential to this mission."</blockquote>
+                 <cite class="d-block fw-bold fs-5">— Prof. Stephen Kiama</cite>
+                 <span class="text-muted">Vice Chancellor, University of Nairobi</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="cta-section" id="cta">
+        <div class="container text-center scroll-animate">
+            <div class="cta-card">
+                <h2 class="display-5 fw-bold mb-3">Get Started with ResearchEval</h2>
+                <p class="lead mx-auto" style="max-width: 600px;">Join the platform that helps you focus on discovery, not administration. Free for all UoN-affiliated research teams.</p>
+                <div class="d-flex justify-content-center flex-wrap gap-3 my-4">
+                     <a href="#" class="btn btn-light btn-lg">Request a Demo</a>
+                     <a href="{% url 'login' %}" class="btn btn-light-outline btn-lg">Log In</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Add this script just before your closing </body> tag in base.html, or here for simplicity -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const scrollElems = document.querySelectorAll('.scroll-animate');
+
+    const elemInView = (el, dividend = 1) => {
+        const elementTop = el.getBoundingClientRect().top;
+        return (
+            elementTop <= (window.innerHeight || document.documentElement.clientHeight) / dividend
+        );
+    };
+
+    const displayScrollElement = (element) => {
+        element.classList.add('is-visible');
+    };
+
+    const hideScrollElement = (element) => {
+        element.classList.remove('is-visible');
+    };
+
+    const handleScrollAnimation = () => {
+        scrollElems.forEach((el) => {
+            if (elemInView(el, 1.25)) {
+                displayScrollElement(el);
+            }
+            // Optional: uncomment to make elements disappear when scrolled out of view
+            // else {
+            //     hideScrollElement(el);
+            // }
+        })
+    }
+
+    window.addEventListener('scroll', () => {
+        handleScrollAnimation();
+    });
+
+    // Trigger on load for elements already in view
+    handleScrollAnimation();
+});
+</script>
+{% endblock %}

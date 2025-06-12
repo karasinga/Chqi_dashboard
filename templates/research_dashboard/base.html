@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Evaluation Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <!-- The dashboard.css link is kept for any custom styles you might have, but the core styles are below -->
+    <link href="{% static 'research_dashboard/css/dashboard.css' %}" rel="stylesheet">
+    <!-- For Frappe Gantt -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+
+    <!-- =================================================================
+         IMPROVED DASHBOARD STYLES
+         ================================================================= -->
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 80px;
+            --primary-color: #6366f1; /* Indigo */
+            --dark-color: #1e293b; /* Slate 800 */
+            --light-gray: #94a3b8; /* Slate 400 */
+            --base-font-size: 0.9rem;
+            --base-line-height: 1.5;
+            --spacer-base: 1rem;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc; /* Slate 50 */
+            font-size: var(--base-font-size);
+            line-height: var(--base-line-height);
+            color: #334155; /* Slate 700 */
+        }
+        
+        /* --- Main Layout --- */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease-in-out;
+            padding: calc(var(--spacer-base) * 1.5);
+        }
+        .main-content-collapsed {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+        
+        /* --- Sidebar --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--dark-color);
+            transition: width 0.3s ease-in-out;
+            z-index: 1030;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        /* Sidebar Header */
+        .sidebar-header {
+            padding: calc(var(--spacer-base) * 1.25) calc(var(--spacer-base) * 1.5);
+            flex-shrink: 0;
+            position: relative;
+        }
+        .sidebar-header .logo-icon {
+            font-size: 1.75rem;
+            color: var(--primary-color);
+        }
+        .sidebar-header .header-text h4 {
+            color: #fff;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        .sidebar-header .header-text small {
+            color: var(--light-gray);
+            font-size: 0.75rem;
+        }
+
+        /* Sidebar Toggle Button */
+        .toggle-sidebar {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            right: -14px; /* Perfectly centered on the edge */
+            background: #fff;
+            border: 1px solid #e2e8f0; /* Slate 200 */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+        }
+        .toggle-sidebar:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .toggle-sidebar i {
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-collapsed .toggle-sidebar i {
+            transform: rotate(180deg);
+        }
+
+        /* Hides text and elements when collapsed */
+        .sidebar-collapsed .sidebar-text,
+        .sidebar-collapsed .menu-text,
+        .sidebar-collapsed .nav-heading,
+        .sidebar-collapsed .user-info {
+            display: none !important;
+        }
+        .sidebar-collapsed .nav-link,
+        .sidebar-collapsed .sidebar-footer .dropdown-toggle {
+            justify-content: center;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar-nav {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding: 0 calc(var(--spacer-base) * 1);
+        }
+        .nav-heading {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-weight: 600;
+            color: #64748b; /* Slate 500 */
+            padding: calc(var(--spacer-base) * 1.5) calc(var(--spacer-base) * 0.5) calc(var(--spacer-base) * 0.5);
+        }
+
+        .sidebar .nav-link {
+            display: flex;
+            align-items: center;
+            color: var(--light-gray);
+            border-radius: 6px;
+            margin: 4px 0;
+            padding: calc(var(--spacer-base) * 0.6) calc(var(--spacer-base) * 0.75);
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+        .sidebar .nav-link.active {
+            background-color: rgba(99, 102, 241, 0.15); /* Primary color with low opacity */
+            color: #fff;
+            font-weight: 600;
+        }
+        /* Active indicator bar */
+        .sidebar .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 60%;
+            background-color: var(--primary-color);
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+        .sidebar .nav-link i {
+            margin-right: 12px;
+            font-size: 1.25rem;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* Sidebar Footer / User Profile */
+        .sidebar-footer {
+            flex-shrink: 0;
+            padding: var(--spacer-base);
+            border-top: 1px solid #334155; /* Slate 700 */
+        }
+        .sidebar-footer .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: #fff;
+            padding: calc(var(--spacer-base) * 0.5);
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .sidebar-footer .dropdown-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar-footer .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        .sidebar-footer .user-info h6 {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .sidebar-footer .user-info small {
+            color: var(--light-gray);
+            font-size: 0.75rem;
+        }
+        .sidebar-footer .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <!-- Sidebar Header -->
+        <div class="sidebar-header">
+            <a href="{% url 'dashboard' %}" class="d-flex align-items-center text-decoration-none">
+                <i class="mdi mdi-flask-outline logo-icon"></i>
+                <div class="sidebar-text header-text ms-3">
+                    <h4 class="mb-0 lh-1">ResearchEval</h4>
+                    <small class="text-muted lh-1">UoN Innovation Centre</small>
+                </div>
+            </a>
+            <div class="toggle-sidebar" onclick="toggleSidebar()">
+                <i class="mdi mdi-chevron-left"></i>
+            </div>
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="sidebar-nav">
+            <ul class="nav flex-column">
+                <li class="nav-heading menu-text">Main Menu</li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/' or 'dashboard' in request.path %}active{% endif %}" href="{% url 'dashboard' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
+                        <i class="mdi mdi-view-dashboard-outline"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'evaluators' in request.path %}active{% endif %}" href="{% url 'evaluators' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Researchers">
+                        <i class="mdi mdi-account-group-outline"></i>
+                        <span class="menu-text">Researchers</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'evaluations' in request.path %}active{% endif %}" href="{% url 'evaluations' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Reports">
+                        <i class="mdi mdi-chart-bar"></i>
+                        <span class="menu-text">Reports</span>
+                    </a>
+                </li>
+
+                <li class="nav-heading menu-text">System</li>
+                <!-- <li class="nav-item">
+                    <a class="nav-link" href="{% url 'about' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="About">
+                        <i class="mdi mdi-information-outline"></i>
+                        <span class="menu-text">About</span>
+                    </a>
+                </li> -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/" data-bs-toggle="tooltip" data-bs-placement="right" title="Admin Settings">
+                        <i class="mdi mdi-cog-outline"></i>
+                        <span class="menu-text">Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Sidebar Footer (User Profile) -->
+        <div class="sidebar-footer">
+            <div class="dropdown">
+                <a href="#" class="dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="user-avatar">
+                        <!-- Display user's initials, or a default icon -->
+                        {% if user.is_authenticated %}
+                            {{ user.username|first|upper }}
+                        {% else %}
+                            <i class="mdi mdi-account"></i>
+                        {% endif %}
+                    </div>
+                    <div class="user-info text-start">
+                        <h6 class="text-white">
+                            {% if user.is_authenticated %}
+                                {{ user.get_full_name|default:user.username }}
+                            {% else %}
+                                Guest User
+                            {% endif %}
+                        </h6>
+                        <small>Administrator</small>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><a class="dropdown-item" href="#"><i class="mdi mdi-account-circle-outline me-2"></i>Profile</a></li>
+                    <li><a class="dropdown-item" href="/admin/"><i class="mdi mdi-cog-outline me-2"></i>Settings</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form id="logout-form" method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left;">
+                                <i class="mdi mdi-logout me-2"></i>Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content" id="main-content">
+        <!-- Main content from your block -->
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            
+            sidebar.classList.toggle('sidebar-collapsed');
+            mainContent.classList.toggle('main-content-collapsed');
+
+            // Re-initialize or destroy tooltips based on state
+            if (sidebar.classList.contains('sidebar-collapsed')) {
+                // Initialize tooltips for collapsed view
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+                // Store the list to destroy later
+                sidebar.dataset.tooltips = JSON.stringify(tooltipList.map(t => t._element.id));
+            } else {
+                // Destroy tooltips when expanded
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.forEach(function(tooltipEl) {
+                    var tooltip = bootstrap.Tooltip.getInstance(tooltipEl);
+                    if (tooltip) {
+                        tooltip.dispose();
+                    }
+                });
+            }
+        }
+    </script>
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>
