@@ -355,6 +355,11 @@ class ProjectTimelineView(View):
 
     def post(self, request, project_id):
         """Handle timeline operations (phases and milestones)"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Received POST request for project {project_id}")
+        logger.debug(f"POST data: {request.POST}")
+        
         project = get_object_or_404(ResearchProject, pk=project_id)
         
         # Handle AJAX status updates
@@ -441,16 +446,24 @@ class ProjectTimelineView(View):
         # Milestone CRUD operations
         elif 'add_milestone' in request.POST:
             try:
+                logger.debug("Processing add_milestone request")
                 milestone = ProjectMilestone.objects.create(
                     project=project,
                     name=request.POST.get('name'),
                     due_date=request.POST.get('due_date'),
                     description=request.POST.get('description')
                 )
+                logger.debug(f"Created milestone: {milestone}")
                 if request.headers.get('HX-Request'):
-                    context = self._get_timeline_context(project)
+                    context = {
+                        'project': project,
+                        'phases': project.phases.all().order_by('order'),
+                        'milestones': project.milestones.all().order_by('order'),
+                        'gantt_chart': self._generate_gantt_chart(self._prepare_tasks_data(project))
+                    }
                     response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    response['HX-Redirect'] = request.path_info
+                    response['HX-Trigger-After-Settle'] = 'milestoneSaved'
+                    response['HX-Trigger'] = 'timelineUpdated'
                     return response
                 messages.success(request, 'Milestone added successfully!')
                 return redirect('project_timeline', project_id=project_id)
@@ -460,6 +473,7 @@ class ProjectTimelineView(View):
 
         elif 'update_milestone' in request.POST:
             try:
+                logger.debug("Processing update_milestone request")
                 from django.utils import timezone
                 from datetime import datetime
                 
@@ -475,7 +489,7 @@ class ProjectTimelineView(View):
                 if request.headers.get('HX-Request'):
                     context = self._get_timeline_context(project)
                     response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    response['HX-Redirect'] = request.path_info
+                    response['HX-Trigger'] = 'milestoneSaved'
                     return response
                 messages.success(request, 'Milestone updated successfully!')
                 return redirect('project_timeline', project_id=project_id)
@@ -555,10 +569,24 @@ class ProjectTimelineView(View):
     def _generate_gantt_chart(self, tasks):
         """Generate Gantt chart HTML from tasks data"""
         try:
-            import plotly.graph_objects as go
-            from plotly.offline import plot
-            import pandas as pd
-            from datetime import datetime
+            # Try importing with error handling for numpy initialization
+            try:
+                import plotly.graph_objects as go
+                from plotly.offline import plot
+                import pandas as pd
+                from datetime import datetime
+            except RuntimeError as e:
+                if "CPU dispatcher tracer already initlized" in str(e):
+                    # Attempt to reload numpy if initialization error occurs
+                    import importlib
+                    import numpy
+                    importlib.reload(numpy)
+                    import plotly.graph_objects as go
+                    from plotly.offline import plot
+                    import pandas as pd
+                    from datetime import datetime
+                else:
+                    raise
 
             # Create a DataFrame from the tasks data
             df = pd.DataFrame(tasks)

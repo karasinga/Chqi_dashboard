@@ -352,6 +352,17 @@
     <!-- HTMX library -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script>
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.successful) {
+                // Close any open modals after successful HTMX request
+                const openModal = document.querySelector('.modal.show');
+                if (openModal) {
+                    bootstrap.Modal.getInstance(openModal).hide();
+                }
+            }
+        });
+    </script>
+    <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('main-content');
@@ -383,5 +394,90 @@
     <script src="{% static 'research_dashboard/js/main.js' %}"></script>
     {% block scripts %}
     {% endblock %}
+
+    <script>
+      // Make initializeAllModals globally accessible
+      window.initializeAllModals = function() {
+        console.log("Initializing all modals");
+        // Edit Phase Modal
+        const editPhaseModal = document.getElementById('editPhaseModal');
+        if (editPhaseModal) {
+          editPhaseModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById("editPhaseId").value = button.getAttribute("data-phase-id");
+            document.getElementById("editPhaseType").value = button.getAttribute("data-phase-type");
+            document.getElementById("editStartDate").value = button.getAttribute("data-start-date");
+            document.getElementById("editEndDate").value = button.getAttribute("data-end-date");
+            document.getElementById("editNotes").value = button.getAttribute("data-notes");
+            document.getElementById("editCompleted").checked = button.getAttribute("data-completed") === "True";
+          });
+        }
+
+        // Edit Milestone Modal
+        const editMilestoneModal = document.getElementById('editMilestoneModal');
+        if (editMilestoneModal) {
+          editMilestoneModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById("editMilestoneId").value = button.getAttribute("data-milestone-id");
+            document.getElementById("editMilestoneName").value = button.getAttribute("data-name");
+            document.getElementById("editMilestoneDueDate").value = button.getAttribute("data-due-date");
+            document.getElementById("editMilestoneDescription").value = button.getAttribute("data-description");
+            document.getElementById("editMilestoneStatus").value = button.getAttribute("data-status");
+          });
+        }
+
+        // Delete Milestone Modal
+        const deleteMilestoneModal = document.getElementById('deleteMilestoneModal');
+        if (deleteMilestoneModal) {
+          deleteMilestoneModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById("deleteMilestoneId").value = button.getAttribute("data-milestone-id");
+          });
+        }
+
+        // Delete Phase Modal
+        const deletePhaseModal = document.getElementById('deletePhaseModal');
+        if (deletePhaseModal) {
+            deletePhaseModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                document.getElementById('deletePhaseId').value = button.getAttribute('data-phase-id');
+            });
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function() {
+        // Initial load
+        window.initializeAllModals();
+
+        // Re-initialize after HTMX swaps
+        document.body.addEventListener("htmx:afterSwap", function(evt) {
+            console.log("htmx:afterSwap triggered, re-initializing modals.");
+            window.initializeAllModals();
+            htmx.process(document.body); // Manually process the new content
+        });
+
+        document.body.addEventListener("htmx:afterRequest", function(evt) {
+            if (evt.detail.successful) {
+                // Find the modal that is currently open and close it
+                const openModal = document.querySelector('.modal.show');
+                if (openModal) {
+                    const modalInstance = bootstrap.Modal.getInstance(openModal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                }
+            }
+        });
+      });
+
+      // Reset form when add milestone modal is shown
+      const addMilestoneModal = document.getElementById('addMilestoneModal');
+      if (addMilestoneModal) {
+        addMilestoneModal.addEventListener('show.bs.modal', function() {
+            const form = document.getElementById('addMilestoneForm');
+            if(form) form.reset();
+        });
+      }
+  </script>
 </body>
 </html>

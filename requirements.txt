@@ -6,3 +6,5 @@ django-filter==24.2
 whitenoise==6.6.0
 PyMySQL
 plotly
+pandas==2.2.2
+numpy==1.26.4

@@ -15,10 +15,7 @@
         <form
           method="post"
           action="."
-          hx-post="."
-          hx-target="#project-content"
-          hx-swap="outerHTML"
-          hx-indicator=".spinner-border"
+          id="milestoneForm"
         >
           {% csrf_token %}
           <input type="hidden" name="phase_id" id="editPhaseId" />
@@ -123,10 +120,6 @@
         <form
           method="post"
           action="."
-          hx-post="."
-          hx-target="#project-content"
-          hx-swap="outerHTML"
-          hx-indicator=".spinner-border"
         >
           {% csrf_token %}
           <div class="mb-4">
@@ -212,7 +205,7 @@
         ></button>
       </div>
       <div class="modal-body px-4 py-3">
-        <form method="post" enctype="multipart/form-data" action=".">
+        <form method="post" enctype="multipart/form-data" action="." onsubmit="window.location.reload()">
           {% csrf_token %}
           <div class="mb-4">
             <label class="form-label fw-semibold">Document Name</label>
@@ -289,10 +282,7 @@
           method="post"
           action="."
           id="deletePhaseForm"
-          hx-post="."
-          hx-target="#project-content"
-          hx-swap="outerHTML"
-          hx-indicator=".spinner-border"
+          onsubmit="window.location.reload()"
         >
           {% csrf_token %}
           <input type="hidden" name="phase_id" id="deletePhaseId" />
@@ -382,10 +372,8 @@
         <form
           method="post"
           action="."
-          hx-post="."
-          hx-target="#project-content"
-          hx-swap="outerHTML"
-          hx-indicator=".spinner-border"
+          id="addMilestoneForm"
+          onsubmit="window.location.reload()"
         >
           {% csrf_token %}
           <div class="mb-4">
@@ -463,10 +451,8 @@
         <form
           method="post"
           action="."
-          hx-post="."
-          hx-target="#project-content"
-          hx-swap="outerHTML"
-          hx-indicator=".spinner-border"
+          id="editMilestoneForm"
+          onsubmit="window.location.reload()"
         >
           {% csrf_token %}
           <input type="hidden" name="milestone_id" id="editMilestoneId" />
@@ -566,10 +552,7 @@
           method="post"
           action="."
           id="deleteMilestoneForm"
-          hx-post="."
-          hx-target="#project-content"
-          hx-swap="outerHTML"
-          hx-indicator=".spinner-border"
+          onsubmit="window.location.reload()"
         >
           {% csrf_token %}
           <input type="hidden" name="milestone_id" id="deleteMilestoneId" />
@@ -770,78 +753,3 @@
         </div>
     </div>
 </div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // Function to initialize a single modal
-    function initModal(modalId, callback) {
-      const modal = document.getElementById(modalId);
-      if (modal) {
-        modal.addEventListener("show.bs.modal", callback);
-      }
-    }
-
-    // Initialize all modals
-    function initializeAllModals() {
-      initModal("editPhaseModal", function (event) {
-        const button = event.relatedTarget;
-        document.getElementById("editPhaseId").value =
-          button.getAttribute("data-phase-id");
-        document.getElementById("editPhaseType").value =
-          button.getAttribute("data-phase-type");
-        document.getElementById("editStartDate").value =
-          button.getAttribute("data-start-date");
-        document.getElementById("editEndDate").value =
-          button.getAttribute("data-end-date");
-        document.getElementById("editNotes").value =
-          button.getAttribute("data-notes");
-        document.getElementById("editCompleted").checked =
-          button.getAttribute("data-completed") === "True";
-      });
-
-      initModal("deletePhaseModal", function (event) {
-        const button = event.relatedTarget;
-        document.getElementById("deletePhaseId").value =
-          button.getAttribute("data-phase-id");
-      });
-
-      initModal("editMilestoneModal", function (event) {
-        const button = event.relatedTarget;
-        document.getElementById("editMilestoneId").value =
-          button.getAttribute("data-milestone-id");
-        document.getElementById("editMilestoneName").value =
-          button.getAttribute("data-name");
-        document.getElementById("editMilestoneDueDate").value =
-          button.getAttribute("data-due-date");
-        document.getElementById("editMilestoneDescription").value =
-          button.getAttribute("data-description");
-        document.getElementById("editMilestoneStatus").value =
-          button.getAttribute("data-status");
-      });
-
-      initModal("deleteMilestoneModal", function (event) {
-        const button = event.relatedTarget;
-        document.getElementById("deleteMilestoneId").value =
-          button.getAttribute("data-milestone-id");
-      });
-
-      initModal("viewDocumentModal", function (event) {
-        const button = event.relatedTarget;
-        const docUrl = button.getAttribute("data-document-url");
-        const docName = button.getAttribute("data-document-name");
-
-        document.getElementById("viewDocumentTitle").textContent = docName;
-        document.getElementById("documentViewer").src = docUrl;
-        document.getElementById("documentDownloadLink").href = docUrl;
-      });
-    }
-
-    // Initial load
-    initializeAllModals();
-
-    // Re-initialize after HTMX swap
-    document.body.addEventListener("htmx:afterSwap", function () {
-      initializeAllModals();
-    });
-  });
-</script>
