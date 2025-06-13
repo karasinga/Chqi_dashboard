@@ -31,9 +31,11 @@ class DashboardView(View):
         status_filter = request.GET.get('status')
         date_from = request.GET.get('date_from')
         date_to = request.GET.get('date_to')
+        project_name = request.GET.get('project_name')
         
-        # Start with projects where the current user is the lead researcher
-        base_projects = ResearchProject.objects.filter(lead_researcher=request.user)
+        
+        base_projects = ResearchProject.objects.all()
+        
         projects = base_projects
         
         # Apply filters if specified
@@ -43,6 +45,8 @@ class DashboardView(View):
             projects = projects.filter(start_date__gte=date_from)
         if date_to:
             projects = projects.filter(end_date__lte=date_to)
+        if project_name:
+            projects = projects.filter(title__icontains=project_name)
             
         # Add annotations after filtering
         projects = projects.annotate(
@@ -106,7 +110,7 @@ class DashboardView(View):
         try:
             if project_id:
                 # Update existing project - verify ownership
-                project = ResearchProject.objects.get(pk=project_id, lead_researcher=request.user)
+                project = ResearchProject.objects.get(pk=project_id)
                 project.title = request.POST.get('title')
                 project.description = request.POST.get('description')
                 project.status = request.POST.get('status')
@@ -135,7 +139,7 @@ class DashboardView(View):
         """Handle project deletion"""
         project_id = request.POST.get('project_id')
         try:
-            project = ResearchProject.objects.get(pk=project_id, lead_researcher=request.user)
+            project = ResearchProject.objects.get(pk=project_id)
             project.delete()
             messages.success(request, 'Project deleted successfully!')
         except ResearchProject.DoesNotExist:
@@ -194,7 +198,7 @@ class ProjectOverviewView(View):
         """Handle GET requests for project overview"""
         project_id = kwargs.get('project_id')
         document_id = kwargs.get('document_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
 
         if document_id:
             return self.view_document(request, document_id)
@@ -212,7 +216,7 @@ class ProjectOverviewView(View):
 
     def post(self, request, project_id):
         """Handle document uploads"""
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         form = DocumentUploadForm(request.POST, request.FILES)
         if form.is_valid():
             document = form.save(commit=False)
@@ -306,7 +310,7 @@ class ProjectTimelineView(View):
     def get(self, request, *args, **kwargs):
         """Handle GET requests for project timeline"""
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
 
         # Prepare timeline data
         tasks = []
@@ -351,7 +355,7 @@ class ProjectTimelineView(View):
 
     def post(self, request, project_id):
         """Handle timeline operations (phases and milestones)"""
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         
         # Handle AJAX status updates
         if 'update_phase_status' in request.POST:
@@ -780,7 +784,7 @@ class ProjectMetricsView(View):
     def get(self, request, *args, **kwargs):
         """Handle GET requests for project metrics"""
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
 
         context = {
             'project': project,
@@ -795,7 +799,7 @@ class ProjectMetricsView(View):
 
     def post(self, request, project_id):
         """Handle metric submissions"""
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         form = MetricForm(request.POST)
         if form.is_valid():
             metric = form.save(commit=False)
@@ -825,7 +829,7 @@ class ProjectMetricsView(View):
     
     def post(self, request, project_id):
         # Verify project ownership
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         
         if 'document_submit' in request.POST:
             form = DocumentUploadForm(request.POST, request.FILES)
@@ -1197,7 +1201,7 @@ class ProjectMetricsView(View):
 
     def post(self, request, project_id):
         # Verify project ownership
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         
         if 'document_submit' in request.POST:
             form = DocumentUploadForm(request.POST, request.FILES)
@@ -1620,13 +1624,13 @@ class ProjectHIVServicesView(View):
 
     def get(self, request, *args, **kwargs):
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
             'current_view': 'hiv_services',
         }
         if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/hiv_services_content.html', context)
+            return render(request, 'research_dashboard/partials/metrics_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectNCDServicesView(View):
@@ -1638,13 +1642,13 @@ class ProjectNCDServicesView(View):
 
     def get(self, request, *args, **kwargs):
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
             'current_view': 'ncd_services',
         }
         if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/ncd_services_content.html', context)
+            return render(request, 'research_dashboard/partials/metrics_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectIntegrationView(View):
@@ -1656,13 +1660,13 @@ class ProjectIntegrationView(View):
 
     def get(self, request, *args, **kwargs):
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
             'current_view': 'integration',
         }
         if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/integration_content.html', context)
+            return render(request, 'research_dashboard/partials/metrics_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectStockSupplyView(View):
@@ -1674,13 +1678,13 @@ class ProjectStockSupplyView(View):
 
     def get(self, request, *args, **kwargs):
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
             'current_view': 'stock_supply',
         }
         if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/stock_supply_content.html', context)
+            return render(request, 'research_dashboard/partials/metrics_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectReferralLinkageView(View):
@@ -1692,13 +1696,13 @@ class ProjectReferralLinkageView(View):
 
     def get(self, request, *args, **kwargs):
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
             'current_view': 'referral_linkage',
         }
         if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/referral_linkage_content.html', context)
+            return render(request, 'research_dashboard/partials/metrics_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectDataQualityView(View):
@@ -1710,13 +1714,13 @@ class ProjectDataQualityView(View):
 
     def get(self, request, *args, **kwargs):
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
             'current_view': 'data_quality',
         }
         if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/data_quality_content.html', context)
+            return render(request, 'research_dashboard/partials/metrics_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectDisaggregationView(View):
@@ -1728,11 +1732,11 @@ class ProjectDisaggregationView(View):
 
     def get(self, request, *args, **kwargs):
         project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id, lead_researcher=request.user)
+        project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
             'current_view': 'disaggregation',
         }
         if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/disaggregation_content.html', context)
+            return render(request, 'research_dashboard/partials/metrics_content.html', context)
         return render(request, self.template_name, context)

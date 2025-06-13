@@ -154,8 +154,45 @@
 {% include "research_dashboard/modals.html" %}
 
 <script>
-// This script is intentionally left blank.
-// All modal-related JavaScript has been moved to modals.html
-// to ensure it is loaded correctly with the modals.
+function initializePlotlyChart() {
+    try {
+        const chartDiv = document.querySelector('.plotly-graph-div');
+        if (!chartDiv) {
+            console.warn('Plotly chart container not found');
+            return;
+        }
+
+        if (typeof Plotly === 'undefined') {
+            console.warn('Plotly not loaded yet, retrying in 500ms');
+            setTimeout(initializePlotlyChart, 500);
+            return;
+        }
+
+        // Store original data and layout
+        const data = chartDiv.data;
+        const layout = chartDiv.layout;
+        
+        // Purge and re-render
+        Plotly.purge(chartDiv);
+        Plotly.newPlot(chartDiv, data, layout, {responsive: true});
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            Plotly.Plots.resize(chartDiv);
+        });
+    } catch (error) {
+        console.error('Error initializing Plotly chart:', error);
+    }
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', initializePlotlyChart);
+
+// Fallback in case DOMContentLoaded doesn't fire
+if (document.readyState !== 'loading') {
+    initializePlotlyChart();
+} else {
+    window.addEventListener('load', initializePlotlyChart);
+}
 </script>
 {% endblock content %}

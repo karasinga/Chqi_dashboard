@@ -7,29 +7,37 @@
         width: auto;
         transition: transform 0.2s ease;
     }
+
     .partner-logos img:hover {
         transform: scale(1.05);
-    } */
+    }
+
+    */
+
     /* Find and replace this rule in your <style> block */
-.partners-section .partners-logos {
-    filter: grayscale(100%); /* Apply grayscale to all logos in the container */
-    opacity: 0.7;
-    display: flex; /* These are from your layout */
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 3rem; /* Adjusted gap for better spacing */
-}
+    .partners-section .partners-logos {
+        filter: grayscale(100%);
+        /* Apply grayscale to all logos in the container */
+        opacity: 0.7;
+        display: flex;
+        /* These are from your layout */
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 3rem;
+        /* Adjusted gap for better spacing */
+    }
 
-.partners-section .partners-logos img {
-    transition: all 0.3s ease;
-}
+    .partners-section .partners-logos img {
+        transition: all 0.3s ease;
+    }
 
-.partners-section .partners-logos img:hover {
-    filter: grayscale(0%); /* This will now reveal the color */
-    opacity: 1;
-    transform: scale(1.05);
-}
+    .partners-section .partners-logos img:hover {
+        filter: grayscale(0%);
+        /* This will now reveal the color */
+        opacity: 1;
+        transform: scale(1.05);
+    }
 </style>
 
 <!-- PARTNERS SECTION -->
@@ -37,9 +45,10 @@
     <div class="container-xl">
         <div class="text-center">
             <h2 class="display-5 fw-bolder mb-3">Our Partners & Funders</h2>
-            <p class="lead text-secondary mx-auto" style="max-width: 600px;">We are proud to collaborate with leading organizations to drive healthcare innovation.</p>
+            <p class="lead text-secondary mx-auto" style="max-width: 600px;">We are proud to collaborate with leading
+                organizations to drive healthcare innovation.</p>
             <div class="partner-logos d-flex flex-wrap justify-content-center align-items-center gap-5 mt-5">
-                <img src="{% static 'images/PEPFAR.png' %}"  alt="PEPFAR Logo">
+                <img src="{% static 'images/PEPFAR.png' %}" alt="PEPFAR Logo">
                 <img src="{% static 'images/USAID.png' %}" alt="USAID Logo">
                 <img src="{% static 'images/CDC.png' %}" alt="CDC Logo">
                 <img src="{% static 'images/GATES.png' %}" alt="Gates Foundation Logo">
