@@ -1,0 +1,73 @@
+<ul class="nav nav-tabs card-header-tabs" id="project-nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'overview' %}active{% endif %}"
+           href="{% url 'project_overview' project_id=project.id %}"
+           data-view="overview">
+            <i class="mdi mdi-information-outline"></i> Overview
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'timeline' %}active{% endif %}"
+           href="{% url 'project_timeline' project_id=project.id %}"
+           data-view="timeline">
+            <i class="mdi mdi-chart-timeline"></i> Timeline
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'metrics' %}active{% endif %}"
+           href="{% url 'project_metrics' project_id=project.id %}"
+           data-view="metrics">
+            <i class="mdi mdi-chart-bar"></i> Metrics
+        </a>
+    </li>
+    <!-- New tabs added below -->
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'hiv_services' %}active{% endif %}"
+           href="{% url 'project_hiv_services' project_id=project.id %}"
+           data-view="hiv_services">
+            <i class="mdi mdi-heart-pulse"></i> HIV services
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'ncd_services' %}active{% endif %}"
+           href="{% url 'project_ncd_services' project_id=project.id %}"
+           data-view="ncd_services">
+            <i class="mdi mdi-stethoscope"></i> NCD services
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'integration' %}active{% endif %}"
+           href="{% url 'project_integration' project_id=project.id %}"
+           data-view="integration">
+            <i class="mdi mdi-connection"></i> Integration
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'stock_supply' %}active{% endif %}"
+           href="{% url 'project_stock_supply' project_id=project.id %}"
+           data-view="stock_supply">
+            <i class="mdi mdi-package-variant"></i> Stock & Supply
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'referral_linkage' %}active{% endif %}"
+           href="{% url 'project_referral_linkage' project_id=project.id %}"
+           data-view="referral_linkage">
+            <i class="mdi mdi-account-arrow-right"></i> Referral & Linkage
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'data_quality' %}active{% endif %}"
+           href="{% url 'project_data_quality' project_id=project.id %}"
+           data-view="data_quality">
+            <i class="mdi mdi-database-check"></i> Data Quality
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'disaggregation' %}active{% endif %}"
+           href="{% url 'project_disaggregation' project_id=project.id %}"
+           data-view="disaggregation">
+            <i class="mdi mdi-chart-pie"></i> Disaggregation
+        </a>
+    </li>
+</ul>

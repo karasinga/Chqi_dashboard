@@ -1,0 +1,96 @@
+    <!-- Project Overview -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Project Overview</h5>
+            <p class="card-text text-muted">{{ project.description }}</p>
+            
+            <div class="row gx-4 gy-3">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="mdi mdi-calendar-start"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-0">Start Date</p>
+                            <h6 class="mb-0">{{ project.start_date }}</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="mdi mdi-calendar-end"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-0">End Date</p>
+                            <h6 class="mb-0">{{ project.end_date|default:"-" }}</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="mdi mdi-account"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-0">Lead Researcher</p>
+                            <h6 class="mb-0">{{ project.lead_researcher|default:"-" }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="card">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Documents</h5>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDocumentModal">
+                    <i class="mdi mdi-plus me-1"></i> Add Document
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="py-3 px-4">Name</th>
+                            <th class="py-3 px-4">Uploaded</th>
+                            <th class="py-3 px-4">Description</th>
+                            <th class="py-3 px-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for document in documents %}
+                        <tr>
+                            <td class="py-3 px-4">{{ document.name }}</td>
+                            <td class="py-3 px-4">{{ document.uploaded_at|date:"Y-m-d" }}</td>
+                            <td class="py-3 px-4 text-muted">{{ document.description|default:"-"|truncatechars:40 }}</td>
+                            <td class="py-3 px-4 text-end">
+                                <a href="{{ document.document.url }}" class="btn btn-sm btn-outline-primary" download>
+                                    <i class="mdi mdi-download me-1"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <p class="mb-0 text-muted">No documents uploaded yet.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+

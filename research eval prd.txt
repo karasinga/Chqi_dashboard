@@ -1,0 +1,115 @@
+<context>
+# Overview  
+ResearchEval is a secure, web-based analytics dashboard serving as "mission control" for research projects. It solves the problem of high-latency, manual data analysis by providing real-time monitoring of key performance indicators across multiple projects. The platform transforms raw data into actionable intelligence, enabling proactive project management. The value lies in reducing issue detection time from months to days, ensuring efficient use of resources and establishing a scalable blueprint for managing complex research projects.
+
+# Core Features  
+1. **Project Dashboard**
+   - Displays all research projects on a single page with key metrics
+   - Provides at-a-glance status indicators for project health
+   - Enables quick navigation to project details
+
+2. **Project Management**
+   - Create, view, update, and delete projects (based on user role)
+   - Track progress against project objectives
+   - Manage project teams and permissions
+
+3. **Real-time Analytics**
+   - Visualizes key performance indicators for each project
+   - Tracks clinical outcomes, operational metrics, and data quality
+   - Provides benchmarking against study averages
+
+4. **Reporting Engine**
+   - Generates customizable reports for stakeholders
+   - Export functionality for PDF/PNG/SVG formats
+   - Automated report scheduling
+
+5. **Role-Based Access Control**
+   - Four distinct user roles with tailored permissions
+   - Secure authentication via identity providers
+   - Audit logging of user actions
+
+# User Experience  
+**User Personas:**
+1. Principal Investigator: Needs high-level project oversight and risk identification
+2. Study Coordinator: Requires detailed project management capabilities
+3. Administrator: Manages users and system configuration
+4. Stakeholder: Views aggregated reports without project-level access
+
+**Key User Flows:**
+1. Log in → View dashboard → Select project → Manage project details
+2. Create new project → Assign team → Set milestones → Track progress
+3. Generate report → Customize metrics → Export/share
+
+**UI/UX Considerations:**
+- Responsive design for various devices
+- Intuitive navigation between projects
+- Clean, professional visualization of metrics
+- Action-oriented interface with clear CTAs
+</context>
+
+<PRD>
+# Technical Architecture  
+**System Components:**
+1. Frontend: React-based dashboard with visualization libraries
+2. Backend: Django/DRF API serving project data
+3. Database: PostgreSQL with aggregated, non-PII data storage
+4. Data Pipeline: ETL process for ingesting source data
+
+**Data Models:**
+- Projects: Core research initiatives with metadata
+- Users: Role-based access control
+- Metrics: Key performance indicators
+- Reports: Generated analytics exports
+
+**APIs and Integrations:**
+- Authentication: Django built-in authentication
+- Data Sources: CSV imports from KenyaEMR (quantitative), KHIS (quantitative), and Redcap (quantitative & qualitative)
+- Export Services: PDF/PNG generation endpoints
+
+**Infrastructure:**
+- Cloud hosting: Render, Heroku, or cPanel
+- Containerized deployment (Docker)
+- Auto-scaling for up to 500 concurrent users
+
+# Development Roadmap  
+**MVP Requirements:**
+1. User authentication and RBAC
+2. Project dashboard with list view
+3. Project CRUD operations
+4. Basic metric visualization
+5. PDF export functionality
+
+**Future Enhancements:**
+1. Automated email/SMS alerts for metric thresholds
+2. Predictive analytics models
+3. Custom report builder
+4. Qualitative data integration for context
+5. Multi-study support template
+
+# Logical Dependency Chain  
+1. **Foundation:** Authentication → User management → RBAC
+2. **Core Functionality:** Project model → Dashboard → CRUD operations
+3. **Analytics:** Metric definitions → Visualization → Benchmarking
+4. **Reporting:** Data aggregation → Export templates → Scheduling
+5. **Advanced Features:** Alerting engine → Predictive models → Custom reports
+
+# Risks and Mitigations  
+**Technical Challenges:**
+- Risk: Inconsistent data sources → Mitigation: Robust data validation layer
+- Risk: Performance bottlenecks → Mitigation: Caching and query optimization
+
+**Resource Constraints:**
+- Risk: Limited development bandwidth → Mitigation: Phased feature rollout
+- Risk: Complex integrations → Mitigation: Mock services during development
+
+# Appendix  
+**Research Findings:**
+- Stakeholders require ≤3 day data freshness for decision-making
+- Coordinators need facility-level drilldown capabilities
+- PI's prioritize high-level "pulse" monitoring
+
+**Success Metrics:**
+- North Star: Time-to-Insight (<3 days)
+- Weekly Active Users (WAU) >95%
+- Data Freshness (<24 hour latency)
+</PRD>

@@ -94,3 +94,107 @@
     display: block;
     line-height: 1;
 }
+
+/* --- Project Overview Enhancements --- */
+.overview-card {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.overview-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.overview-icon {
+    flex-shrink: 0;
+    margin-right: 1rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.overview-icon i {
+    font-size: 1.5rem;
+}
+
+.overview-content .text-muted {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.overview-content h6 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #343a40;
+}
+
+/* --- Documents Section Enhancements --- */
+.documents-card .card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 1.5rem;
+}
+
+.documents-card .card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.documents-card .btn-primary {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.documents-card .table th {
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+    border-top: none;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+}
+
+.documents-card .table td {
+    vertical-align: middle;
+    padding: 1rem 1.5rem;
+}
+
+.documents-card .table-hover tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+.documents-card .btn-outline-primary {
+    border-color: #dee2e6;
+    color: #495057;
+}
+
+.documents-card .btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.documents-card .empty-state {
+    padding: 3rem;
+    text-align: center;
+}
+
+.documents-card .empty-state i {
+    font-size: 3rem;
+    color: #ced4da;
+}
+
+.documents-card .empty-state p {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-top: 1rem;
+}
