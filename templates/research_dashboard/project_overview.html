@@ -1,0 +1,118 @@
+{% extends "research_dashboard/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <!-- Project Overview -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Project Overview</h5>
+            <p class="card-text">{{ project.description }}</p>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light p-2 rounded me-3">
+                            <i class="mdi mdi-calendar-start text-primary"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Start Date</small>
+                            <p class="mb-0">{{ project.start_date }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light p-2 rounded me-3">
+                            <i class="mdi mdi-calendar-end text-primary"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">End Date</small>
+                            <p class="mb-0">{{ project.end_date|default:"-" }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light p-2 rounded me-3">
+                            <i class="mdi mdi-account text-primary"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Lead Researcher</small>
+                            <p class="mb-0">{{ project.lead_researcher|default:"-" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- STUDY AREA MAP -->
+  <section class="map-section">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3988.850877043322!2d36.788972!3d-1.261777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMcKwMTUnNDIuNCJTIDM2wrA0NycyMC4zIkU!5e0!3m2!1sen!2ske!4v1749649738748!5m2!1sen!2ske"
+      width="100%"
+      height="500"
+      style="border: 0"
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+    >
+    </iframe>
+  </section>
+
+    <!-- Documents -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">Documents</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addDocumentModal">
+                    <i class="mdi mdi-plus"></i> Add Document
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Uploaded</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for document in documents %}
+                        <tr>
+                            <td>{{ document.name }}</td>
+                            <td>{{ document.uploaded_at|date:"Y-m-d" }}</td>
+                            <td>{{ document.description|default:"-"|truncatechars:40 }}</td>
+                            <td>
+                                <a href="{% url 'download_document' project_id=project.id document_id=document.id %}" class="btn btn-sm btn-outline-primary" download>
+                                    <i class="mdi mdi-download"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No documents uploaded yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "research_dashboard/modals.html" %}
+
+<script>
+    // Force a reload if the page is accessed via history (e.g., back/forward button)
+    // This helps prevent issues with bfcache (back-forward cache) causing content duplication.
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
+{% endblock content %}

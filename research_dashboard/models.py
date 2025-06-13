@@ -72,8 +72,10 @@ class EvaluationPhase(models.Model):
     phase_type = models.CharField(max_length=20, choices=PHASE_TYPES)
     start_date = models.DateField()
     end_date = models.DateField()
+    progress = models.PositiveIntegerField(default=0, help_text="Progress percentage (0-100)")
     completed = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         phase = self.get_phase_type_display()
@@ -93,6 +95,7 @@ class ProjectMilestone(models.Model):
     due_date = models.DateField()
     status = models.CharField(max_length=20, choices=MILESTONE_STATUS, default='pending')
     completed_date = models.DateField(null=True, blank=True)
+    order = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.project.title} - {self.name}"
@@ -129,6 +132,27 @@ class ProgressMetric(models.Model):
     def __str__(self):
         return f"{self.project.title} - {self.name}: {self.value}"
 
+class Role(models.Model):
+    ROLE_CHOICES = [
+        ('principal_investigator', 'Principal Investigator'),
+        ('study_coordinator', 'Study Coordinator'),
+        ('administrator', 'Administrator'),
+        ('stakeholder', 'Stakeholder'),
+    ]
+    
+    name = models.CharField(max_length=50, choices=ROLE_CHOICES, unique=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.get_name_display()
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    roles = models.ManyToManyField(Role, blank=True)
+    
+    def __str__(self):
+        return f"{self.user.username}'s profile"
+
 class ResearchDocument(models.Model):
     project = models.ForeignKey(ResearchProject, on_delete=models.CASCADE, related_name='documents')
     name = models.CharField(max_length=200)
@@ -144,6 +168,7 @@ class Evaluator(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField()
     projects = models.ManyToManyField(ResearchProject, related_name='evaluators', blank=True)
+    roles = models.ManyToManyField(Role, related_name='evaluators', blank=True)
     
     def __str__(self):
         return self.name

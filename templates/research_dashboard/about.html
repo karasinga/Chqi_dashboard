@@ -1,193 +1,444 @@
-{% extends "research_dashboard/public_base.html" %}
-{% load static %}
-
-{% block title %}About The Centre | ResearchEval{% endblock %}
-
+{% extends "research_dashboard/public_base.html" %} 
+{% load static %} 
+{% block title %}About The Centre | ResearchEval{% endblock %} 
 {% block extra_styles %}
 <style>
-    /* Styles specifically for the About Us page content */
-    html {
-        scroll-behavior: smooth;
-        scroll-padding-top: 5rem; /* Adjust for fixed navbar height */
-    }
+  /* Styles specifically for the About Us page content */
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem; /* Adjust for fixed navbar height */
+  }
 
-    .fw-bolder { font-weight: 800 !important; }
-    .shadow-soft { box-shadow: 0 .5rem 1.5rem rgba(33, 37, 41, .07)!important; }
-    .text-secondary { color: #6c757d !important; }
+  .fw-bolder {
+    font-weight: 800 !important;
+  }
+  .shadow-soft {
+    box-shadow: 0 0.5rem 1.5rem rgba(33, 37, 41, 0.07) !important;
+  }
+  .text-secondary {
+    color: #6c757d !important;
+  }
 
-    /* Hero Section from your design */
-    .hero-section {
-        position: relative; padding: 8rem 0;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .hero-background {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        background-image: url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
-        background-size: cover; background-position: center;
-    }
-    .hero-overlay {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(33, 37, 41, 0.65);
-    }
+  /* Hero Section from your design */
+  .hero-section {
+    position: relative;
+    padding: 8rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80");
+    background-size: cover;
+    background-position: center;
+  }
+  .hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(33, 37, 41, 0.65);
+  }
 
-    /* Section Pill from your design */
-    .section-pill {
-        display: inline-block; padding: 0.2rem 0.75rem;
-        font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.5px; color: var(--primary-color);
-        background-color: rgba(99, 102, 241, 0.1);
-        border-radius: 999px;
-    }
+  /* Section Pill from your design */
+  .section-pill {
+    display: inline-block;
+    padding: 0.2rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--primary-color);
+    background-color: rgba(99, 102, 241, 0.1);
+    border-radius: 999px;
+  }
 
-    /* Timeline from your design */
-    .timeline { position: relative; max-width: 1140px; margin: 0 auto; }
+  /* Timeline from your design */
+  .timeline {
+    position: relative;
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+  .timeline::after {
+    content: "";
+    position: absolute;
+    width: 2px;
+    background-color: #dee2e6;
+    top: 20px;
+    bottom: 20px;
+    left: 50%;
+    margin-left: -1px;
+    z-index: 1;
+  }
+  .timeline-item {
+    padding: 1rem 2.5rem;
+    position: relative;
+    width: 50%;
+  }
+  .timeline-item::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    right: -8px;
+    background-color: #fff;
+    border: 2px solid var(--primary-color);
+    top: 30px;
+    border-radius: 50%;
+    z-index: 2;
+  }
+  .timeline-item:nth-child(odd) {
+    left: 0;
+  }
+  .timeline-item:nth-child(even) {
+    left: 50%;
+  }
+  .timeline-item:nth-child(even)::after {
+    left: -8px;
+  }
+  .card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background-color: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 6px rgba(33, 37, 41, 0.04);
+  }
+  .card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(33, 37, 41, 0.08);
+  }
+  .timeline-date {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  /* Contact Section from your design */
+  .icon-shape {
+    font-size: 1.75rem;
+    flex-shrink: 0;
+  }
+  #contact .form-control {
+    background-color: #f8f9fa;
+    border: 1px solid #f8f9fa;
+  }
+  #contact .form-control::placeholder {
+    color: #6c757d;
+  }
+  #contact .form-control:focus {
+    background-color: #fff;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+  }
+
+  /* Map Section from your design */
+  .map-section {
+    padding: 0;
+    line-height: 0;
+  }
+
+  @media (max-width: 991.98px) {
     .timeline::after {
-        content: ''; position: absolute; width: 2px; background-color: #dee2e6;
-        top: 20px; bottom: 20px; left: 50%; margin-left: -1px; z-index: 1;
+      left: 20px;
     }
-    .timeline-item { padding: 1rem 2.5rem; position: relative; width: 50%; }
-    .timeline-item::after {
-        content: ''; position: absolute; width: 16px; height: 16px;
-        right: -8px; background-color: #fff; border: 2px solid var(--primary-color);
-        top: 30px; border-radius: 50%; z-index: 2;
+    .timeline-item {
+      width: 100%;
+      padding-left: 50px;
+      padding-right: 15px;
     }
-    .timeline-item:nth-child(odd) { left: 0; }
-    .timeline-item:nth-child(even) { left: 50%; }
-    .timeline-item:nth-child(even)::after { left: -8px; }
-    .card-hover {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        background-color: #fff; border-radius: 0.75rem; padding: 1.5rem;
-        border: 1px solid #e9ecef; box-shadow: 0 4px 6px rgba(33, 37, 41, 0.04);
+    .timeline-item:nth-child(odd),
+    .timeline-item:nth-child(even) {
+      left: 0;
     }
-    .card-hover:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(33, 37, 41, 0.08); }
-    .timeline-date {
-        font-size: 0.75rem; font-weight: 700; color: #6c757d;
-        text-transform: uppercase; letter-spacing: 0.5px;
-        margin-bottom: 0.5rem; display: block;
+    .timeline-item::after,
+    .timeline-item:nth-child(even)::after {
+      left: 12px;
     }
-    
-    /* Contact Section from your design */
-    .icon-shape { font-size: 1.75rem; flex-shrink: 0; }
-    #contact .form-control { background-color: #f8f9fa; border: 1px solid #f8f9fa; }
-    #contact .form-control::placeholder { color: #6c757d; }
-    #contact .form-control:focus { background-color: #fff; border-color: var(--primary-color); box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15); }
-
-    /* Map Section from your design */
-    .map-section { padding: 0; line-height: 0; }
-
-    @media (max-width: 991.98px) {
-        .timeline::after { left: 20px; }
-        .timeline-item { width: 100%; padding-left: 50px; padding-right: 15px; }
-        .timeline-item:nth-child(odd), .timeline-item:nth-child(even) { left: 0; }
-        .timeline-item::after, .timeline-item:nth-child(even)::after { left: 12px; }
-    }
+  }
 </style>
-{% endblock %}
-
-
+{% endblock %} 
 {% block content %}
 <main class="landing-page">
-    <!-- HERO SECTION -->
-    <section class="hero-section text-center text-white">
-        <div class="hero-background"></div>
-        <div class="hero-overlay"></div>
-        <div class="container-xl position-relative">
-            <span class="d-block mb-4" style="opacity: 0.8;">Commissioned: July 29, 2022</span>
-            <h1 class="display-3 fw-bolder mb-3">Centre for Healthcare and Innovation</h1>
-            <p class="lead fs-4 mb-5 mx-auto" style="max-width: 650px; opacity: 0.9;">
-                Advancing research for better healthcare solutions across Kenya and beyond.
+  <!-- HERO SECTION -->
+  <section class="hero-section text-center text-white">
+    <div class="hero-background"></div>
+    <div class="hero-overlay"></div>
+    <div class="container-xl position-relative">
+      <span class="d-block mb-4" style="opacity: 0.8"
+        >Commissioned: July 29, 2022</span
+      >
+      <h1 class="display-3 fw-bolder mb-3">
+        Centre for Healthcare and Innovation
+      </h1>
+      <p class="lead fs-4 mb-5 mx-auto" style="max-width: 650px; opacity: 0.9">
+        Advancing research for better healthcare solutions across Kenya and
+        beyond.
+      </p>
+      <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+        <a href="#mission" class="btn btn-primary btn-lg px-4 py-3"
+          >Discover Our Mission</a
+        >
+        <a href="#timeline" class="btn btn-outline-light btn-lg px-4 py-3"
+          >Explore Our Journey</a
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- MISSION SECTION -->
+  <section id="mission" class="py-5 scroll-animate">
+    <div class="container-xl">
+      <div class="row gx-5 gy-5 align-items-center">
+        <div class="col-lg-6">
+          <div class="section-pill mb-3">Who We Are</div>
+          <h2 class="display-4 fw-bolder mb-4">Our Mission Statement</h2>
+          <p class="fs-5 text-secondary mb-4">
+            To pioneer innovative healthcare solutions through cutting-edge
+            research, interdisciplinary collaboration, and community engagement,
+            ultimately improving health outcomes.
+          </p>
+          <p class="text-secondary">
+            Through focused research and strategic innovation, we are
+            fundamentally transforming healthcare delivery for communities
+            nationwide.
+          </p>
+        </div>
+        <div class="col-lg-6">
+          <div class="shadow-soft rounded-4 overflow-hidden">
+            <img
+              src="{% static 'images/CHQI.png' %}"
+              alt="CHQI Research Team"
+              class="img-fluid"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPACT BY THE NUMBERS SECTION -->
+  <section id="impact" class="py-5 bg-light scroll-animate">
+    <div class="container-xl">
+      <div class="text-center mb-5">
+        <h2 class="display-5 fw-bolder">Our Impact by the Numbers</h2>
+        <p class="lead text-secondary mx-auto" style="max-width: 600px">
+          Quantifying our commitment to public health and innovation.
+        </p>
+      </div>
+      <div class="row text-center g-4">
+        <div class="col-md-4">
+          <div class="p-4 bg-white rounded-3 shadow-sm h-100">
+            <h3 class="display-4 fw-bolder text-primary">3+</h3>
+            <p class="h5 fw-bold text-dark mb-0">Flagship Projects</p>
+            <p class="text-secondary small mt-1">
+              Leading major health initiatives.
             </p>
-            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                <a href="#mission" class="btn btn-primary btn-lg px-4 py-3">Discover Our Mission</a>
-                <a href="#timeline" class="btn btn-outline-light btn-lg px-4 py-3">Explore Our Journey</a>
-            </div>
+          </div>
         </div>
-    </section>
-
-    <!-- MISSION SECTION -->
-    <section id="mission" class="py-5 scroll-animate">
-        <div class="container-xl">
-            <div class="row gx-5 gy-5 align-items-center">
-                <div class="col-lg-6">
-                    <div class="section-pill mb-3">Who We Are</div>
-                    <h2 class="display-4 fw-bolder mb-4">Our Mission Statement</h2>
-                    <p class="fs-5 text-secondary mb-4">
-                        To pioneer innovative healthcare solutions through cutting-edge research, interdisciplinary collaboration, and community engagement, ultimately improving health outcomes.
-                    </p>
-                    <p class="text-secondary">Through focused research and strategic innovation, we are fundamentally transforming healthcare delivery for communities nationwide.</p>
-                </div>
-                <div class="col-lg-6">
-                    <div class="shadow-soft rounded-4 overflow-hidden">
-                        <img src="{% static 'images/CHQI.png' %}" alt="CHQI Research Team" class="img-fluid">
-                    </div>
-                </div>
-            </div>
+        <div class="col-md-4">
+          <div class="p-4 bg-white rounded-3 shadow-sm h-100">
+            <h3 class="display-4 fw-bolder text-primary">5+</h3>
+            <p class="h5 fw-bold text-dark mb-0">Counties Served</p>
+            <p class="text-secondary small mt-1">
+              Extending our reach across Kenya.
+            </p>
+          </div>
         </div>
-    </section>
-    
-    <!-- IMPACT BY THE NUMBERS SECTION -->
-    <section id="impact" class="py-5 bg-light scroll-animate">
-        <div class="container-xl">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bolder">Our Impact by the Numbers</h2>
-                <p class="lead text-secondary mx-auto" style="max-width: 600px;">Quantifying our commitment to public health and innovation.</p>
-            </div>
-            <div class="row text-center g-4">
-                <div class="col-md-4"><div class="p-4 bg-white rounded-3 shadow-sm h-100"><h3 class="display-4 fw-bolder text-primary">3+</h3><p class="h5 fw-bold text-dark mb-0">Flagship Projects</p><p class="text-secondary small mt-1">Leading major health initiatives.</p></div></div>
-                <div class="col-md-4"><div class="p-4 bg-white rounded-3 shadow-sm h-100"><h3 class="display-4 fw-bolder text-primary">5+</h3><p class="h5 fw-bold text-dark mb-0">Counties Served</p><p class="text-secondary small mt-1">Extending our reach across Kenya.</p></div></div>
-                <div class="col-md-4"><div class="p-4 bg-white rounded-3 shadow-sm h-100"><h3 class="display-4 fw-bolder text-primary">100+</h3><p class="h5 fw-bold text-dark mb-0">Researchers & Staff</p><p class="text-secondary small mt-1">Driving innovation and discovery.</p></div></div>
-            </div>
+        <div class="col-md-4">
+          <div class="p-4 bg-white rounded-3 shadow-sm h-100">
+            <h3 class="display-4 fw-bolder text-primary">100+</h3>
+            <p class="h5 fw-bold text-dark mb-0">Researchers & Staff</p>
+            <p class="text-secondary small mt-1">
+              Driving innovation and discovery.
+            </p>
+          </div>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <!-- TIMELINE/JOURNEY SECTION -->
-    <section id="timeline" class="py-5 scroll-animate">
-        <div class="container-xl">
-            <div class="text-center mb-5 pb-3">
-                <div class="section-pill d-inline-block mb-3">Our Story</div>
-                <h2 class="display-4 fw-bolder">Our Chronological Journey</h2>
-            </div>
-            <div class="timeline">
-                <div class="timeline-item"><div class="timeline-content card-hover"><span class="timeline-date">2020</span><h3 class="h5 text-primary fw-bold mb-2">CRISSP+ Launched</h3><p class="text-secondary small">A PEPFAR/CDC funded project to build public health capacity in Kirinyaga and Kiambu for universal HIV prevention and treatment.</p></div></div>
-                <div class="timeline-item"><div class="timeline-content card-hover"><span class="timeline-date">2021</span><h3 class="h5 text-primary fw-bold mb-2">Fahari ya Jamii Project</h3><p class="text-secondary small">A PEPFAR/USAID-funded project to increase access to quality, county-led health services in Nairobi and Kajiado.</p></div></div>
-                <div class="timeline-item"><div class="timeline-content card-hover"><span class="timeline-date">July 2022</span><h3 class="h5 text-primary fw-bold mb-2">Centre Commissioned</h3><p class="text-secondary small">The Vice Chancellor, Prof. Stephen Kiama, officially commissioned our state-of-the-art Centre, a milestone for UoN.</p></div></div>
-                <div class="timeline-item"><div class="timeline-content card-hover"><span class="timeline-date">2025</span><h3 class="h5 text-primary fw-bold mb-2">HIV Integration in Primary Care (HIP)</h3><p class="text-secondary small">A Gates Foundation Initiative to integrate HIV services into primary healthcare in Nairobi, Kiambu, and Kitui.</p></div></div>
-                <div class="timeline-item"><div class="timeline-content card-hover"><span class="timeline-date">Endorsement</span><blockquote class="blockquote fst-italic"><p class="mb-2 h6">"The University of Nairobi is one of the universities selected by donors to accelerate research on health and innovation."</p><footer class="blockquote-footer small text-end"><cite title="Source Title">— Prof. Stephen Kiama, Vice Chancellor</cite></footer></blockquote></div></div>
-            </div>
+  <!-- TIMELINE/JOURNEY SECTION -->
+  <section id="timeline" class="py-5 scroll-animate">
+    <div class="container-xl">
+      <div class="text-center mb-5 pb-3">
+        <div class="section-pill d-inline-block mb-3">Our Story</div>
+        <h2 class="display-4 fw-bolder">Our Chronological Journey</h2>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-content card-hover">
+            <span class="timeline-date">2020</span>
+            <h3 class="h5 text-primary fw-bold mb-2">CRISSP+ Launched</h3>
+            <p class="text-secondary small">
+              A PEPFAR/CDC funded project to build public health capacity in
+              Kirinyaga and Kiambu for universal HIV prevention and treatment.
+            </p>
+          </div>
         </div>
-    </section>
-
-    <!-- PARTNERS SECTION -->
-    {% include 'research_dashboard/partials/partners and donors.html' %}
-
-    <!-- CONTACT SECTION -->
-    <section id="contact" class="py-5 scroll-animate">
-        <div class="container-xl">
-            <div class="text-center mb-5"><div class="section-pill d-inline-block mb-3">Collaborate With Us</div><h2 class="display-4 fw-bolder">Get In Touch</h2></div>
-            <div class="row gx-5 gy-5 align-items-center">
-                <div class="col-lg-5">
-                    <p class="fs-5 text-secondary mb-5">We welcome inquiries from researchers, partners, and the community. Let's build the future of healthcare together.</p>
-                    <div class="d-flex align-items-start mb-4"><div class="icon-shape text-primary me-4"><i class="bi bi-geo-alt-fill"></i></div><div><h5 class="fw-bolder mb-1">Our Location</h5><p class="text-secondary mb-0">University of Nairobi, College of Health Sciences, Nairobi, Kenya</p></div></div>
-                    <div class="d-flex align-items-start"><div class="icon-shape text-primary me-4"><i class="bi bi-envelope-fill"></i></div><div><h5 class="fw-bolder mb-1">Email Us</h5><a href="mailto:healthcare-innovation@uon.edu" class="text-secondary text-decoration-none">healthcare-innovation@uon.edu</a></div></div>
-                </div>
-                <div class="col-lg-7">
-                    <div class="card p-4 p-lg-5 shadow-soft border-0 rounded-4"><form><div class="mb-3"><label for="name" class="form-label visually-hidden">Your Name</label><input type="text" class="form-control form-control-lg" id="name" placeholder="Your Name"></div><div class="mb-3"><label for="email" class="form-label visually-hidden">Your Email</label><input type="email" class="form-control form-control-lg" id="email" placeholder="Your Email"></div><div class="mb-4"><label for="message" class="form-label visually-hidden">Your Message</label><textarea class="form-control form-control-lg" id="message" rows="7" placeholder="Your Message"></textarea></div><div class="d-grid"><button type="submit" class="btn btn-primary btn-lg">Send Message</button></div></form></div>
-                </div>
-            </div>
+        <div class="timeline-item">
+          <div class="timeline-content card-hover">
+            <span class="timeline-date">2021</span>
+            <h3 class="h5 text-primary fw-bold mb-2">
+              Fahari ya Jamii Project
+            </h3>
+            <p class="text-secondary small">
+              A PEPFAR/USAID-funded project to increase access to quality,
+              county-led health services in Nairobi and Kajiado.
+            </p>
+          </div>
         </div>
-    </section>
+        <div class="timeline-item">
+          <div class="timeline-content card-hover">
+            <span class="timeline-date">July 2022</span>
+            <h3 class="h5 text-primary fw-bold mb-2">Centre Commissioned</h3>
+            <p class="text-secondary small">
+              The Vice Chancellor, Prof. Stephen Kiama, officially commissioned
+              our state-of-the-art Centre, a milestone for UoN.
+            </p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-content card-hover">
+            <span class="timeline-date">2025</span>
+            <h3 class="h5 text-primary fw-bold mb-2">
+              HIV Integration in Primary Care (HIP)
+            </h3>
+            <p class="text-secondary small">
+              A Gates Foundation Initiative to integrate HIV services into
+              primary healthcare in Nairobi, Kiambu, and Kitui.
+            </p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-content card-hover">
+            <span class="timeline-date">Endorsement</span>
+            <blockquote class="blockquote fst-italic">
+              <p class="mb-2 h6">
+                "The University of Nairobi is one of the universities selected
+                by donors to accelerate research on health and innovation."
+              </p>
+              <footer class="blockquote-footer small text-end">
+                <cite title="Source Title"
+                  >— Prof. Stephen Kiama, Vice Chancellor</cite
+                >
+              </footer>
+            </blockquote>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- MAP SECTION -->
-    <section class="map-section">
-        <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3988.850877043322!2d36.788972!3d-1.261777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMcKwMTUnNDIuNCJTIDM2wrA0NycyMC4zIkU!5e0!3m2!1sen!2ske!4v1749649738748!5m2!1sen!2ske" 
-            width="100%" 
-            height="500" 
-            style="border:0;" 
-            allowfullscreen="" 
-            loading="lazy" 
-            referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
-    </section>
+  <!-- PARTNERS SECTION -->
+  {% include 'research_dashboard/partials/partners and donors.html' %}
+
+  <!-- CONTACT SECTION -->
+  <section id="contact" class="py-5 scroll-animate">
+    <div class="container-xl">
+      <div class="text-center mb-5">
+        <div class="section-pill d-inline-block mb-3">Collaborate With Us</div>
+        <h2 class="display-4 fw-bolder">Get In Touch</h2>
+      </div>
+      <div class="row gx-5 gy-5 align-items-center">
+        <div class="col-lg-5">
+          <p class="fs-5 text-secondary mb-5">
+            We welcome inquiries from researchers, partners, and the community.
+            Let's build the future of healthcare together.
+          </p>
+          <div class="d-flex align-items-start mb-4">
+            <div class="icon-shape text-primary me-4">
+              <i class="bi bi-geo-alt-fill"></i>
+            </div>
+            <div>
+              <h5 class="fw-bolder mb-1">Our Location</h5>
+              <p class="text-secondary mb-0">
+                University of Nairobi, College of Health Sciences, Nairobi,
+                Kenya
+              </p>
+            </div>
+          </div>
+          <div class="d-flex align-items-start">
+            <div class="icon-shape text-primary me-4">
+              <i class="bi bi-envelope-fill"></i>
+            </div>
+            <div>
+              <h5 class="fw-bolder mb-1">Email Us</h5>
+              <a
+                href="mailto:healthcare-innovation@uon.edu"
+                class="text-secondary text-decoration-none"
+                >healthcare-innovation@uon.edu</a
+              >
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="card p-4 p-lg-5 shadow-soft border-0 rounded-4">
+            <form>
+              <div class="mb-3">
+                <label for="name" class="form-label visually-hidden"
+                  >Your Name</label
+                ><input
+                  type="text"
+                  class="form-control form-control-lg"
+                  id="name"
+                  placeholder="Your Name"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="email" class="form-label visually-hidden"
+                  >Your Email</label
+                ><input
+                  type="email"
+                  class="form-control form-control-lg"
+                  id="email"
+                  placeholder="Your Email"
+                />
+              </div>
+              <div class="mb-4">
+                <label for="message" class="form-label visually-hidden"
+                  >Your Message</label
+                ><textarea
+                  class="form-control form-control-lg"
+                  id="message"
+                  rows="7"
+                  placeholder="Your Message"
+                ></textarea>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                  Send Message
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAP SECTION -->
+  <section class="map-section">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3988.850877043322!2d36.788972!3d-1.261777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMcKwMTUnNDIuNCJTIDM2wrA0NycyMC4zIkU!5e0!3m2!1sen!2ske!4v1749649738748!5m2!1sen!2ske"
+      width="100%"
+      height="500"
+      style="border: 0"
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+    >
+    </iframe>
+  </section>
 </main>
 {% endblock %}

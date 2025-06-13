@@ -1,0 +1,36 @@
+{% extends "research_dashboard/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    
+<!-- {% include "research_dashboard/partials/project_header.html" %} -->
+    <!-- Progress Metrics -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">Progress Metrics</h5>
+            </div>
+            {% if project.powerbi_url %}
+                <div class="ratio ratio-16x9">
+                    <iframe src="{{ project.powerbi_url }}" frameborder="0" allowFullScreen="true"></iframe>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No PowerBI dashboard configured for this project
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Force a reload if the page is accessed via history (e.g., back/forward button)
+    // This helps prevent issues with bfcache (back-forward cache) causing content duplication.
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
+{% endblock content %}

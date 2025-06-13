@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ResearchProject, EvaluationPhase, ProjectMilestone, ProgressMetric, ResearchDocument, Evaluator, Evaluation
+from .models import ResearchProject, EvaluationPhase, ProjectMilestone, ProgressMetric, ResearchDocument, Evaluator, Evaluation, Role, UserProfile
 
 @admin.register(ResearchProject)
 class ResearchProjectAdmin(admin.ModelAdmin):
@@ -33,6 +33,17 @@ class ResearchDocumentAdmin(admin.ModelAdmin):
 class EvaluatorAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'phone')
     search_fields = ('name', 'email', 'phone')
+
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+    search_fields = ('name',)
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user',)
+    filter_horizontal = ('roles',)
+    search_fields = ('user__username',)
 
 @admin.register(Evaluation)
 class EvaluationAdmin(admin.ModelAdmin):
