@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
+
     function initializeGlobalEventListeners() {
         // Progress bars
         document.querySelectorAll('.progress-bar[data-completion]').forEach(bar => {

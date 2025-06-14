@@ -1,6 +1,45 @@
 from django import forms
-from .models import ResearchProject, ResearchDocument, ProgressMetric, Evaluator, Evaluation
+from django.utils import timezone
+from .models import ResearchProject, ResearchDocument, ProgressMetric, Evaluator, Evaluation, ProjectMilestone
 
+class ProjectMilestoneForm(forms.ModelForm):
+    status = forms.ChoiceField(
+        choices=ProjectMilestone.MILESTONE_STATUS,
+        required=False,
+        initial='pending'
+    )
+    
+    class Meta:
+        model = ProjectMilestone
+        fields = ['name', 'due_date', 'description', 'status']
+        widgets = {
+            'due_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class MilestoneStatusForm(forms.Form):
+    status = forms.ChoiceField(
+        choices=ProjectMilestone.MILESTONE_STATUS,
+        required=True
+    )
+    completed_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        initial=timezone.now().date()
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get('status')
+        completed_date = cleaned_data.get('completed_date')
+
+        if status == 'completed' and not completed_date:
+            raise forms.ValidationError("Completed date is required when marking as completed")
+        
+        if status != 'completed' and completed_date:
+            cleaned_data['completed_date'] = None
+            
+        return cleaned_data
 class ResearchProjectForm(forms.ModelForm):
     class Meta:
         model = ResearchProject

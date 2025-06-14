@@ -1,14 +1,24 @@
 <header class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-<a class="navbar-brand" href="{% url 'landing_page' %}"><i class="mdi mdi-flask-outline me-2"></i>ResearchEval</a>
+        <a class="navbar-brand" href="{% url 'landing_page' %}"><i class="mdi mdi-flask-outline me-2"></i>ResearchEval</a>
+
+        <!-- "Hamburger" menu for mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- END OF Hamburger BUTTON -->
+
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mx-auto">
                 <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About Us</a></li>
-                <!-- <li class="nav-item"><a class="nav-link" href="/#features">Features</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'about' %}#contact">Contact</a></li> -->
+                <!-- Uncomment these if you need them later
+                <li class="nav-item"><a class="nav-link" href="/#features">Features</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'about' %}#contact">Contact</a></li>
+                -->
             </ul>
-            <div class="d-flex">
-                <a href="{% url 'login' %}" class="btn btn-outline-primary me-2">Log In</a>
+            <!-- MODIFIED THIS DIV for better mobile layout -->
+            <div class="d-flex flex-column flex-lg-row mt-4 mt-lg-0">
+                <a href="{% url 'login' %}" class="btn btn-outline-primary me-lg-2 mb-2 mb-lg-0">Log In</a>
                 <a href="#" class="btn btn-primary">Request a Demo</a>
             </div>
         </div>

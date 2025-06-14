@@ -1,6 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, ListView, UpdateView, DetailView
 from .models import ResearchProject, Evaluator, Evaluation, EvaluationPhase, ProjectMilestone, ResearchDocument
+from .forms import MilestoneStatusForm, ProjectMilestoneForm
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -277,10 +278,29 @@ def update_phase_status(request, phase_id):
 @require_http_methods(["PATCH"])
 def update_milestone_status(request, milestone_id):
     milestone = get_object_or_404(ProjectMilestone, id=milestone_id)
-    data = json.loads(request.body)
-    milestone.status = data.get('status')
+    form = MilestoneStatusForm(request.POST)
+    
+    if not form.is_valid():
+        return JsonResponse({
+            'success': False,
+            'errors': form.errors.as_json()
+        }, status=400)
+
+    status = form.cleaned_data.get('status')
+    completed_date = form.cleaned_data.get('completed_date')
+
+    if status:
+        milestone.status = status
+    if completed_date is not None:  # Could be None if status changed from completed
+        milestone.completed_date = completed_date
+    
     milestone.save()
-    return JsonResponse({'success': True})
+    return JsonResponse({
+        'success': True,
+        'status': milestone.status,
+        'status_display': milestone.get_status_display(),
+        'completed_date': milestone.completed_date.strftime('%Y-%m-%d') if milestone.completed_date else None
+    })
 
 @login_required
 @require_http_methods(["POST"])
@@ -311,7 +331,19 @@ class ProjectTimelineView(View):
         """Handle GET requests for project timeline"""
         project_id = kwargs.get('project_id')
         project = get_object_or_404(ResearchProject, pk=project_id)
-
+        
+        # Initialize form
+        form = ProjectMilestoneForm()
+        
+        # Check if editing existing milestone
+        milestone_id = request.GET.get('milestone_id')
+        if milestone_id:
+            try:
+                milestone = ProjectMilestone.objects.get(pk=milestone_id, project=project)
+                form = ProjectMilestoneForm(instance=milestone)
+            except ProjectMilestone.DoesNotExist:
+                pass
+        
         # Prepare timeline data
         tasks = []
         for phase in project.phases.all():
@@ -346,10 +378,11 @@ class ProjectTimelineView(View):
             'current_view': 'timeline',
             'phases': project.phases.all(),
             'milestones': project.milestones.all(),
-            'gantt_chart': gantt_chart
+            'gantt_chart': gantt_chart,
+            'form': form
         }
 
-        if request.headers.get('HX-Request'):
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return render(request, 'research_dashboard/partials/timeline_content.html', context)
         return render(request, self.template_name, context)
 
@@ -447,55 +480,85 @@ class ProjectTimelineView(View):
         elif 'add_milestone' in request.POST:
             try:
                 logger.debug("Processing add_milestone request")
-                milestone = ProjectMilestone.objects.create(
-                    project=project,
-                    name=request.POST.get('name'),
-                    due_date=request.POST.get('due_date'),
-                    description=request.POST.get('description')
-                )
-                logger.debug(f"Created milestone: {milestone}")
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all().order_by('order'),
-                        'milestones': project.milestones.all().order_by('order'),
-                        'gantt_chart': self._generate_gantt_chart(self._prepare_tasks_data(project))
+                form = ProjectMilestoneForm(request.POST)
+                if form.is_valid():
+                    milestone = form.save(commit=False)
+                    milestone.project = project
+                    milestone.save()
+                    logger.debug(f"Created milestone: {milestone}")
+                    
+                    # Prepare response data
+                    response_data = {
+                        'success': True,
+                        'message': 'Milestone added successfully!'
                     }
-                    response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    response['HX-Trigger-After-Settle'] = 'milestoneSaved'
-                    response['HX-Trigger'] = 'timelineUpdated'
-                    return response
-                messages.success(request, 'Milestone added successfully!')
-                return redirect('project_timeline', project_id=project_id)
+                    
+                    if request.headers.get('HX-Request'):
+                        context = {
+                            'project': project,
+                            'phases': project.phases.all().order_by('order'),
+                            'milestones': project.milestones.all().order_by('order'),
+                            'gantt_chart': self._generate_gantt_chart(self._prepare_tasks_data(project))
+                        }
+                        response = render(request, 'research_dashboard/partials/timeline_content.html', context)
+                        response['HX-Trigger-After-Settle'] = 'milestoneSaved'
+                        response['HX-Trigger'] = 'timelineUpdated'
+                        return response
+                    
+                    messages.success(request, 'Milestone added successfully!')
+                    return JsonResponse(response_data) if (request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest') else redirect('project_timeline', project_id=project_id)
+                else:
+                    error_message = 'Invalid milestone data. Please check the form.'
+                    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({
+                            'success': False,
+                            'errors': form.errors.as_json(),
+                            'message': error_message
+                        }, status=400)
+                    messages.error(request, error_message)
             except Exception as e:
-                messages.error(request, f'Error adding milestone: {str(e)}')
-            return redirect('project_timeline', project_id=project_id)
+                error_message = f'Error adding milestone: {str(e)}'
+                if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'message': error_message
+                    }, status=400)
+                messages.error(request, error_message)
+            
+            return JsonResponse({'success': False}, status=400) if (request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest') else redirect('project_timeline', project_id=project_id)
 
         elif 'update_milestone' in request.POST:
             try:
                 logger.debug("Processing update_milestone request")
-                from django.utils import timezone
-                from datetime import datetime
-                
                 milestone = ProjectMilestone.objects.get(
                     pk=request.POST.get('milestone_id'),
                     project=project
                 )
                 milestone.name = request.POST.get('name')
-                due_date_str = request.POST.get('due_date')
-                milestone.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
+                milestone.due_date = request.POST.get('due_date')
                 milestone.description = request.POST.get('description')
+                milestone.status = request.POST.get('status', milestone.status)
                 milestone.save()
+                
                 if request.headers.get('HX-Request'):
-                    context = self._get_timeline_context(project)
+                    context = {
+                        'project': project,
+                        'phases': project.phases.all(),
+                        'milestones': project.milestones.all(),
+                        'gantt_chart': self._generate_gantt_chart(self._prepare_tasks_data(project))
+                    }
                     response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    response['HX-Trigger'] = 'milestoneSaved'
+                    response['HX-Trigger'] = 'milestoneUpdated'
                     return response
+                    
                 messages.success(request, 'Milestone updated successfully!')
                 return redirect('project_timeline', project_id=project_id)
             except Exception as e:
+                logger.error(f"Error updating milestone: {str(e)}")
                 messages.error(request, f'Error updating milestone: {str(e)}')
-            return redirect('project_timeline', project_id=project_id)
+                if request.headers.get('HX-Request'):
+                    return JsonResponse({'success': False, 'error': str(e)}, status=400)
+                return redirect('project_timeline', project_id=project_id)
 
         elif request.POST.get('_method') == 'DELETE' and request.POST.get('milestone_id'):
             try:

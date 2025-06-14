@@ -186,7 +186,76 @@ function initializePlotlyChart() {
 }
 
 // Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', initializePlotlyChart);
+document.addEventListener('DOMContentLoaded', function() {
+    initializePlotlyChart();
+    
+    // Initialize edit milestone modal with existing data
+    const editMilestoneModal = document.getElementById('editMilestoneModal');
+    if (editMilestoneModal) {
+        editMilestoneModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const form = this.querySelector('form');
+            
+            // Set all form fields from button data attributes
+            form.querySelector('#editMilestoneId').value = button.dataset.milestoneId;
+            form.querySelector('#editMilestoneName').value = button.dataset.name || '';
+            form.querySelector('#editMilestoneDueDate').value = button.dataset.dueDate || '';
+            form.querySelector('#editMilestoneDescription').value = button.dataset.description || '';
+            
+            // Set status select
+            const statusSelect = form.querySelector('#editMilestoneStatus');
+            if (statusSelect) {
+                statusSelect.value = button.dataset.status || 'pending';
+            }
+        });
+    }
+    
+    // Handle status toggle changes
+    document.querySelectorAll('.status-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const type = this.dataset.type;
+            const id = this.dataset.id;
+            const status = this.checked ? 'completed' : 'pending';
+            
+            fetch(`/update-${type}-status/${id}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({status: status})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update the badge text and class
+                    const badge = toggle.closest('.form-check').querySelector('.badge');
+                    if (badge) {
+                        badge.textContent = data.status_display;
+                        badge.className = 'badge ms-2 ' + 
+                            (data.new_status === 'completed' ? 'bg-success' : 
+                             data.new_status === 'overdue' ? 'bg-danger' : 'bg-info');
+                    }
+                    // Refresh the Gantt chart after status update
+                    initializePlotlyChart();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert the toggle if there was an error
+                toggle.checked = !toggle.checked;
+                if (error.error) {
+                    alert(error.error);
+                }
+            });
+        });
+    });
+});
 
 // Fallback in case DOMContentLoaded doesn't fire
 if (document.readyState !== 'loading') {
