@@ -28,9 +28,12 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost','127.0.0.1','researcheval.ttl.co.ke','ttl.co.ke']
 
 # Security settings for cookies and sessions
+# CSRF and session cookie settings
+CSRF_COOKIE_DOMAIN = '.ttl.co.ke' if not DEBUG else None
 CSRF_COOKIE_SECURE = not DEBUG  # Secure in production
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access
 CSRF_COOKIE_SAMESITE = 'Lax'  # Balance security and functionality
+SESSION_COOKIE_DOMAIN = '.ttl.co.ke' if not DEBUG else None
 SESSION_COOKIE_SECURE = not DEBUG  # Match CSRF cookie
 SESSION_COOKIE_SAMESITE = 'Lax'  # Match CSRF cookie
 CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke'] if not DEBUG else []
