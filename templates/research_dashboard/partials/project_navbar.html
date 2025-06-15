@@ -3,7 +3,7 @@
         <a class="nav-link project-nav-link {% if current_view == 'overview' %}active{% endif %}"
            href="{% url 'project_overview' project_id=project.id %}"
            data-view="overview">
-            <i class="mdi mdi-information-outline"></i> Overview
+            <i class="mdi mdi-information-outline"></i> Project Overview
         </a>
     </li>
     <li class="nav-item">
@@ -11,13 +11,6 @@
            href="{% url 'project_timeline' project_id=project.id %}"
            data-view="timeline">
             <i class="mdi mdi-chart-timeline"></i> Timeline
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'metrics' %}active{% endif %}"
-           href="{% url 'project_metrics' project_id=project.id %}"
-           data-view="metrics">
-            <i class="mdi mdi-chart-bar"></i> Metrics
         </a>
     </li>
     <!-- New tabs added below -->
