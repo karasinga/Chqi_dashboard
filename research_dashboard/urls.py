@@ -5,7 +5,7 @@ from .views import EvaluatorDeleteView, EvaluationView, EvaluationDetailView, Ev
 from .views import update_phase_status, update_milestone_status, update_timeline_order
 from .views import ProjectHIVServicesView, ProjectNCDServicesView, ProjectIntegrationView
 from .views import ProjectStockSupplyView, ProjectReferralLinkageView, ProjectDataQualityView
-from .views import ProjectDisaggregationView
+from .views import ProjectDisaggregationView,county_boundaries_api
 from django.contrib.auth.views import LogoutView  # Add logout view
 
 urlpatterns = [
@@ -26,6 +26,7 @@ urlpatterns = [
     path('project/<int:project_id>/disaggregation/', ProjectDisaggregationView.as_view(), name='project_disaggregation'),
     path('project/<int:project_id>/download/<int:document_id>/', 
          ProjectOverviewView.as_view(), name='download_document'),
+    path('api/county-boundaries/', county_boundaries_api, name='api_county_boundaries'),
     path('about/', AboutView.as_view(), name='about'),
     path('evaluators/', EvaluatorListView.as_view(), name='evaluators'),
     path('evaluators/<int:pk>/delete/', EvaluatorDeleteView.as_view(), name='delete_evaluator'),

@@ -1781,3 +1781,78 @@ class ProjectDisaggregationView(View):
         if request.headers.get('HX-Request'):
             return render(request, 'research_dashboard/partials/metrics_content.html', context)
         return render(request, self.template_name, context)
+
+
+# research_dashboard/views.py
+
+import geopandas as gpd
+from django.http import JsonResponse
+from django.conf import settings
+import os
+import json
+
+# Define the path to your specific shapefile inside your app's directory
+# <<< CHANGED: Updated app name and shapefile name
+SHAPEFILE_PATH = os.path.join(settings.BASE_DIR, 'research_dashboard', 'data', 'ken_admbnda_adm1_iebc_20191031.shp')
+
+# Use a simple caching mechanism to avoid reading the file on every request
+county_gdf = None
+
+# research_dashboard/views.py
+
+def get_county_geodata():
+    """Loads, processes, filters, and caches the GeoDataFrame."""
+    global county_gdf
+    if county_gdf is not None:
+        return county_gdf
+
+    try:
+        print(f"Loading and preparing county shapefile from: {SHAPEFILE_PATH}")
+        gdf = gpd.read_file(SHAPEFILE_PATH)
+        
+        # --- Step 1: Filter for your specific study area ---
+        target_counties = ["Nairobi", "Kiambu", "Kitui"]
+        gdf = gdf[gdf['ADM1_EN'].isin(target_counties)].copy()
+        
+        if gdf.empty:
+            print(f"WARNING: None of the target counties {target_counties} were found.")
+        else:
+            print(f"Successfully filtered for {len(gdf)} counties: {list(gdf['ADM1_EN'])}")
+
+        # --- Step 2: Reproject to WGS 84 (EPSG:4326) ---
+        if gdf.crs.to_epsg() != 4326:
+            gdf = gdf.to_crs(epsg=4326)
+            
+        # --- Step 3: Standardize the county name column ---
+        gdf.rename(columns={'ADM1_EN': 'name'}, inplace=True)
+        
+        # <<< SOLUTION >>>
+        # --- Step 4: Select ONLY the columns needed for the map ---
+        # This removes all other columns, including the problematic date columns,
+        # and makes the final GeoJSON much smaller and faster.
+        gdf = gdf[['name', 'geometry']]
+        
+        county_gdf = gdf
+        return county_gdf
+        
+    except Exception as e:
+        print(f"CRITICAL ERROR: Could not load or process shapefile. Details: {e}")
+        return gpd.GeoDataFrame([], columns=['name', 'geometry'])
+
+# ... (The rest of your views.py, including the county_boundaries_api function, can remain exactly the same) ...
+
+# Pre-load the data when the Django server starts
+get_county_geodata()
+
+def county_boundaries_api(request):
+    """API endpoint that returns the filtered county boundaries as GeoJSON."""
+    gdf = get_county_geodata()
+    
+    if gdf.empty:
+        return JsonResponse({"error": "County boundary data could not be loaded or is empty after filtering."}, status=500)
+
+    # Convert the GeoDataFrame to a GeoJSON string, then load it as a Python dict
+    # This is the most reliable way to ensure a valid JSON response in Django.
+    geojson_data = json.loads(gdf.to_json())
+
+    return JsonResponse(geojson_data)
