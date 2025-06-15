@@ -230,76 +230,62 @@
 
 
 <script>
-  // Wait for the DOM to be fully loaded before initializing the map
-  document.addEventListener('DOMContentLoaded', function () {
+  /**
+   * Initializes the Study Area Intelligence Map.
+   * This function is designed to be "re-entrant" - it can be called multiple
+   * times without causing errors. It checks if the map is already initialized
+   * and exits if it is. This is crucial for HTMX-driven navigation.
+   */
+  function initializeOverviewMap() {
+    const mapContainer = document.getElementById('study-area-map');
+
+    // --- GUARD CLAUSE ---
+    // If the map container element doesn't exist on the page, or if Leaflet has
+    // already initialized a map in it (indicated by the _leaflet_id property),
+    // we stop the function to prevent errors or re-initialization.
+    if (!mapContainer || mapContainer._leaflet_id) {
+      return; 
+    }
+
     // ===================================================================
-    // STEP 1: DUMMY GEOJSON DATA (No changes)
+    // STEP 1: DUMMY GEOJSON DATA
     // ===================================================================
-    const dummyFacilitiesGeoJSON = { /* ... same data ... */
-      "type": "FeatureCollection", "features": [ { "type": "Feature", "properties": { "name": "Kenyatta National Hospital", "county": "Nairobi", "lead": "Dr. A. Njoroge", "kpi_value": 72, "status": "underperforming" }, "geometry": { "type": "Point", "coordinates": [36.806, -1.301] } }, { "type": "Feature", "properties": { "name": "Kiambu Level 5 Hospital", "county": "Kiambu", "lead": "Dr. B. Wanjiku", "kpi_value": 96, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [36.837, -1.171] } }, { "type": "Feature", "properties": { "name": "Kitui County Referral Hospital", "county": "Kitui", "lead": "Dr. C. Mutisya", "kpi_value": 88, "status": "at_risk" }, "geometry": { "type": "Point", "coordinates": [38.016, -1.366] } }, { "type": "Feature", "properties": { "name": "Thika Level 5 Hospital", "county": "Kiambu", "lead": "Dr. D. Kamau", "kpi_value": 99, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [37.083, -1.047] } } ]
-    };
-    const dummyCountyBoundaries = { /* ... same data ... */
-        "Nairobi": [[-1.16, 36.66], [-1.44, 37.09]], "Kiambu": [[-1.25, 36.52], [-0.71, 37.26]], "Kitui": [[-2.2, 37.7], [-0.9, 38.9]]
-    };
+    const dummyFacilitiesGeoJSON = { "type": "FeatureCollection", "features": [ { "type": "Feature", "properties": { "name": "Kenyatta National Hospital", "county": "Nairobi", "lead": "Dr. A. Njoroge", "kpi_value": 72, "status": "underperforming" }, "geometry": { "type": "Point", "coordinates": [36.806, -1.301] } }, { "type": "Feature", "properties": { "name": "Kiambu Level 5 Hospital", "county": "Kiambu", "lead": "Dr. B. Wanjiku", "kpi_value": 96, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [36.837, -1.171] } }, { "type": "Feature", "properties": { "name": "Kitui County Referral Hospital", "county": "Kitui", "lead": "Dr. C. Mutisya", "kpi_value": 88, "status": "at_risk" }, "geometry": { "type": "Point", "coordinates": [38.016, -1.366] } }, { "type": "Feature", "properties": { "name": "Thika Level 5 Hospital", "county": "Kiambu", "lead": "Dr. D. Kamau", "kpi_value": 99, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [37.083, -1.047] } } ] };
+    const dummyCountyBoundaries = { "Nairobi": [[-1.16, 36.66], [-1.44, 37.09]], "Kiambu": [[-1.25, 36.52], [-0.71, 37.26]], "Kitui": [[-2.2, 37.7], [-0.9, 38.9]] };
 
-
-        // ===================================================================
-    // *** UPDATED *** STEP 2: DEFINE BASE MAPS
     // ===================================================================
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    });
-
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-    });
-    
-    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        maxZoom: 17,
-        attribution: 'Map data: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: © <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-    });
-    
-    const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-    });
-
-    // Group the base maps for the layer control
-    const baseMaps = {
-        "Streets": osmLayer,
-        "Satellite": satelliteLayer,
-        "Topographic": topoLayer,
-        "Light": lightLayer
-    };
-
+    // STEP 2: DEFINE BASE MAPS
+    // ===================================================================
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' });
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri' });
+    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: 'Map data: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: © <a href="https://opentopomap.org">OpenTopoMap</a>' });
+    const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>' });
+    const baseMaps = { "Streets": osmLayer, "Satellite": satelliteLayer, "Topographic": topoLayer, "Light": lightLayer };
 
     // ===================================================================
     // STEP 3: INITIALIZE MAP
     // ===================================================================
-    const mapContainer = document.getElementById('study-area-map');
     mapContainer.innerHTML = ''; // Clear the loading spinner
     const map = L.map(mapContainer, {
         center: [-1.286389, 36.817223],
         zoom: 8,
-        layers: [osmLayer] // This sets the default base map to 'Streets'
+        layers: [osmLayer]
     });
     
-
     // ===================================================================
-    // STEP 4: DEFINE OVERLAY LAYERS (No changes)
+    // STEP 4: DEFINE OVERLAY LAYERS
     // ===================================================================
-    function getStatusColor(status) { /* ... */ switch (status) { case 'meeting_targets': return '#198754'; case 'at_risk': return '#ffc107'; case 'underperforming': return '#dc3545'; default: return '#6c757d'; } }
-    function pointToLayer(feature, latlng) { /* ... */ return L.circleMarker(latlng, { radius: 8, fillColor: getStatusColor(feature.properties.status), color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 }); }
-    function onEachFeature(feature, layer) { /* ... */ if (feature.properties) { const popupContent = `<h6 class="mb-1">${feature.properties.name}</h6><p class="text-muted mb-1 small">${feature.properties.county} County</p><hr class="my-1"><strong>Lead:</strong> ${feature.properties.lead}<br><strong>Performance:</strong> ${feature.properties.kpi_value}%`; layer.bindPopup(popupContent); layer.on('mouseover', function (e) { this.openPopup(); }); layer.on('mouseout', function (e) { this.closePopup(); }); } }
+    function getStatusColor(status) { switch (status) { case 'meeting_targets': return '#198754'; case 'at_risk': return '#ffc107'; case 'underperforming': return '#dc3545'; default: return '#6c757d'; } }
+    function pointToLayer(feature, latlng) { return L.circleMarker(latlng, { radius: 8, fillColor: getStatusColor(feature.properties.status), color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 }); }
+    function onEachFeature(feature, layer) { if (feature.properties) { const popupContent = `<h6 class="mb-1">${feature.properties.name}</h6><p class="text-muted mb-1 small">${feature.properties.county} County</p><hr class="my-1"><strong>Lead:</strong> ${feature.properties.lead}<br><strong>Performance:</strong> ${feature.properties.kpi_value}%`; layer.bindPopup(popupContent); layer.on('mouseover', function (e) { this.openPopup(); }); layer.on('mouseout', function (e) { this.closePopup(); }); } }
 
-    const facilityStatusLayers = { /* ... same object ... */
+    const facilityStatusLayers = {
         meeting_targets: L.geoJSON(dummyFacilitiesGeoJSON, { filter: (feature) => feature.properties.status === 'meeting_targets', pointToLayer: pointToLayer, onEachFeature: onEachFeature }),
         at_risk: L.geoJSON(dummyFacilitiesGeoJSON, { filter: (feature) => feature.properties.status === 'at_risk', pointToLayer: pointToLayer, onEachFeature: onEachFeature }),
         underperforming: L.geoJSON(dummyFacilitiesGeoJSON, { filter: (feature) => feature.properties.status === 'underperforming', pointToLayer: pointToLayer, onEachFeature: onEachFeature })
     };
 
-    const overlayMaps = { /* ... same object ... */
+    const overlayMaps = {
       '<span class="d-inline-block me-1" style="width: 10px; height: 10px; background-color: #198754; border-radius: 50%; vertical-align: middle;"></span> Meeting Targets': facilityStatusLayers.meeting_targets,
       '<span class="d-inline-block me-1" style="width: 10px; height: 10px; background-color: #ffc107; border-radius: 50%; vertical-align: middle;"></span> At Risk': facilityStatusLayers.at_risk,
       '<span class="d-inline-block me-1" style="width: 10px; height: 10px; background-color: #dc3545; border-radius: 50%; vertical-align: middle;"></span> Underperforming': facilityStatusLayers.underperforming
@@ -307,19 +293,17 @@
     
     Object.values(facilityStatusLayers).forEach(layer => layer.addTo(map));
 
-
     // ===================================================================
-    // STEP 5: ADD THE LAYER CONTROL TO THE MAP (No changes)
+    // STEP 5: ADD THE LAYER CONTROL TO THE MAP
     // ===================================================================
     L.control.layers(baseMaps, overlayMaps).addTo(map);
 
-
     // ===================================================================
-    // STEPS 6, 7, 8: LEGEND, SEARCH, and FILTER (No changes)
+    // STEPS 6, 7, 8: LEGEND, SEARCH, FILTER, AND BUTTONS
     // ===================================================================
     const legendItems = document.querySelectorAll('.legend-item');
     legendItems.forEach(item => {
-        item.addEventListener('click', (event) => { /* ... same logic ... */
+        item.addEventListener('click', (event) => {
             const status = event.currentTarget.getAttribute('data-status'); const layer = facilityStatusLayers[status]; event.currentTarget.classList.toggle('active'); if (map.hasLayer(layer)) { map.removeLayer(layer); } else { map.addLayer(layer); }
         });
     });
@@ -327,105 +311,71 @@
     const searchBox = document.getElementById('map-search-box');
     let searchMarker = null;
     const initialCenter = [-1.286389, 36.817223]; const initialZoom = 8;
-    searchBox.addEventListener('input', (e) => { /* ... same logic ... */
+    searchBox.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase(); if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; } if (searchTerm.length === 0) { map.closePopup(); map.flyTo(initialCenter, initialZoom); return; } const foundFeature = dummyFacilitiesGeoJSON.features.find(feature => feature.properties.name.toLowerCase().includes(searchTerm)); if (foundFeature) { const coords = [foundFeature.geometry.coordinates[1], foundFeature.geometry.coordinates[0]]; map.flyTo(coords, 14); searchMarker = L.circleMarker(coords, { radius: 12, fillColor: '#0d6efd', color: '#fff', weight: 3, opacity: 1, fillOpacity: 0.9 }).addTo(map); Object.values(facilityStatusLayers).forEach(layerGroup => { layerGroup.eachLayer(layer => { if (layer.feature.properties.name === foundFeature.properties.name) { layer.openPopup(); } }); }); }
     });
-    searchBox.addEventListener('search', (e) => { /* ... same logic ... */
+    searchBox.addEventListener('search', (e) => {
         if (e.target.value === '') { map.closePopup(); if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; } map.flyTo(initialCenter, initialZoom); }
     });
 
     const countyFilter = document.getElementById('county-filter');
     const counties = [...new Set(dummyFacilitiesGeoJSON.features.map(feature => feature.properties.county))];
-    counties.sort().forEach(county => { /* ... same logic ... */
+    counties.sort().forEach(county => {
         const option = document.createElement('option'); option.value = county; option.textContent = county; countyFilter.appendChild(option);
     });
-    countyFilter.addEventListener('change', (e) => { /* ... same logic ... */
+    countyFilter.addEventListener('change', (e) => {
         const selectedCounty = e.target.value; map.closePopup(); if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; } if (selectedCounty === 'all') { map.flyTo(initialCenter, initialZoom); } else { const bounds = dummyCountyBoundaries[selectedCounty]; if (bounds) { map.flyToBounds(bounds); } }
     });
 
-    // Add fullscreen button functionality
     const fullscreenButton = document.getElementById('fullscreen-map-btn');
     fullscreenButton.addEventListener('click', () => {
-        const mapContainer = document.getElementById('study-area-map');
-        
         if (!document.fullscreenElement) {
-            // Enter fullscreen
-            if (mapContainer.requestFullscreen) {
-                mapContainer.requestFullscreen();
-            } else if (mapContainer.webkitRequestFullscreen) { /* Safari */
-                mapContainer.webkitRequestFullscreen();
-            } else if (mapContainer.msRequestFullscreen) { /* IE11 */
-                mapContainer.msRequestFullscreen();
-            }
-            
-            // Update button icon
-            fullscreenButton.innerHTML = '<i class="mdi mdi-fullscreen-exit"></i>';
-            fullscreenButton.title = 'Exit Fullscreen';
-            
-            // Resize map to fit container
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
+            mapContainer.requestFullscreen().catch(err => alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`));
         } else {
-            // Exit fullscreen
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) { /* Safari */
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) { /* IE11 */
-                document.msExitFullscreen();
-            }
-            
-            // Update button icon
-            fullscreenButton.innerHTML = '<i class="mdi mdi-fullscreen"></i>';
-            fullscreenButton.title = 'Toggle Fullscreen';
-            
-            // Resize map to fit container
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
+            document.exitFullscreen();
         }
     });
 
-    // Handle fullscreen change events to update button state
     document.addEventListener('fullscreenchange', () => {
-        const fullscreenButton = document.getElementById('fullscreen-map-btn');
-        if (!document.fullscreenElement) {
-            fullscreenButton.innerHTML = '<i class="mdi mdi-fullscreen"></i>';
-            fullscreenButton.title = 'Toggle Fullscreen';
-        }
+        const icon = document.fullscreenElement ? 'mdi-fullscreen-exit' : 'mdi-fullscreen';
+        const title = document.fullscreenElement ? 'Exit Fullscreen' : 'Toggle Fullscreen';
+        fullscreenButton.innerHTML = `<i class="mdi ${icon}"></i>`;
+        fullscreenButton.title = title;
+        // Invalidate map size after a short delay to allow transition to complete
+        setTimeout(() => map.invalidateSize(), 200);
     });
 
-    // Add reset button functionality
     const resetButton = document.getElementById('reset-map-view-btn');
     resetButton.addEventListener('click', () => {
-        // Reset map position and zoom
         map.flyTo(initialCenter, initialZoom);
         map.closePopup();
-
-        // Clear any active search
-        if (searchMarker) {
-            map.removeLayer(searchMarker);
-            searchMarker = null;
-        }
+        if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
         searchBox.value = '';
-
-        // Reset the county filter dropdown
         countyFilter.value = 'all';
-
-        // Reset the legend filters to show all layers
         legendItems.forEach(item => {
             const status = item.getAttribute('data-status');
             const layer = facilityStatusLayers[status];
-            
-            // Add the layer back to the map if it was removed
-            if (!map.hasLayer(layer)) {
-                map.addLayer(layer);
-            }
-            // Ensure the legend item has the 'active' class for correct styling
+            if (!map.hasLayer(layer)) { map.addLayer(layer); }
             item.classList.add('active');
         });
     });
 
-  }); // End of DOMContentLoaded
+    // Finally, ensure the map renders correctly in its container, especially after an HTMX swap
+    setTimeout(() => map.invalidateSize(), 10);
+  }
+
+  // --- TRIGGER THE INITIALIZATION ---
+
+  // 1. Call the function immediately. This handles the initial full-page load.
+  initializeOverviewMap();
+
+  // 2. Listen for HTMX's 'afterSwap' event. This handles navigation *to* this page
+  //    from another page using the navbar.
+  document.body.addEventListener('htmx:afterSwap', function(event) {
+    // We check if the content that was just swapped in contains our map container.
+    // This makes sure we only try to initialize the map when it's actually present.
+    if (event.detail.target.querySelector('#study-area-map')) {
+        initializeOverviewMap();
+    }
+  });
 </script>
