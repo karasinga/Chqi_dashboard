@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-3bz(e9k-knt8inio-y(hl+5vq)ez!4hyv*&ulpn+@7m9aao1@*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = False
+DEBUG = True
 
-# ALLOWED_HOSTS = ['localhost','127.0.0.1','researcheval.ttl.co.ke','ttl.co.ke']
+ALLOWED_HOSTS = ['researcheval.ttl.co.ke','ttl.co.ke','localhost','127.0.0.1',]
 
 # # Security settings for cookies and sessions
 # # CSRF and session cookie settings
@@ -41,41 +41,41 @@ SECRET_KEY = 'django-insecure-3bz(e9k-knt8inio-y(hl+5vq)ez!4hyv*&ulpn+@7m9aao1@*
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # We will set DEBUG based on the environment
-IS_PRODUCTION = os.environ.get('DJANGO_ENV') == 'production'
-DEBUG = not IS_PRODUCTION
+# IS_PRODUCTION = os.environ.get('DJANGO_ENV') == 'production'
+# DEBUG = not IS_PRODUCTION
 
-# Update ALLOWED_HOSTS to be dynamic
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-if IS_PRODUCTION:
-    ALLOWED_HOSTS.extend(['researcheval.ttl.co.ke', 'ttl.co.ke'])
+# # Update ALLOWED_HOSTS to be dynamic
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# if IS_PRODUCTION:
+#     ALLOWED_HOSTS.extend(['researcheval.ttl.co.ke', 'ttl.co.ke'])
 
 
 # --- NEW, ROBUST SECURITY SETTINGS ---
 
-if IS_PRODUCTION:
-    # Production-only settings
-    CSRF_COOKIE_DOMAIN = '.ttl.co.ke'
-    SESSION_COOKIE_DOMAIN = '.ttl.co.ke'
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke']
-    # You should also set this for stronger security in production
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000 # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-else:
-    # Development settings (these are the defaults, but it's good to be explicit)
-    CSRF_COOKIE_DOMAIN = None
-    SESSION_COOKIE_DOMAIN = None
-    CSRF_COOKIE_SECURE = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    # For local development, your origin is typically http://127.0.0.1:8000
-    CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
+# if IS_PRODUCTION:
+# Production-only settings
+CSRF_COOKIE_DOMAIN = '.ttl.co.ke'
+SESSION_COOKIE_DOMAIN = '.ttl.co.ke'
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke']
+# You should also set this for stronger security in production
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000 # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+# else:
+#     # Development settings (these are the defaults, but it's good to be explicit)
+#     CSRF_COOKIE_DOMAIN = None
+#     SESSION_COOKIE_DOMAIN = None
+#     CSRF_COOKIE_SECURE = False
+#     SESSION_COOKIE_SECURE = False
+#     CSRF_COOKIE_SAMESITE = 'Lax'
+#     SESSION_COOKIE_SAMESITE = 'Lax'
+#     # For local development, your origin is typically http://127.0.0.1:8000
+#     CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
 
 
 # Application definition
@@ -127,9 +127,9 @@ WSGI_APPLICATION = 'evaluation.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-import os
+# import os
 
-if os.environ.get('DJANGO_ENV') == 'production':
+if not DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
