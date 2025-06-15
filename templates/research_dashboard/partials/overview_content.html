@@ -327,10 +327,6 @@
         }
     }).addTo(map);
 
-    // // Zoom the map to fit the loaded counties perfectly
-    // map.fitBounds(countyLayer.getBounds().pad(0.1)); // Add a little padding
-    // const initialBounds = countyLayer.getBounds().pad(0.1); // Store for the reset button
-
     // --- Facility Point Layers ---
     function getStatusColor(status) { switch (status) { case 'meeting_targets': return '#198754'; case 'at_risk': return '#ffc107'; case 'underperforming': return '#dc3545'; default: '#6c757d'; } }
     function pointToLayer(feature, latlng) { return L.circleMarker(latlng, { radius: 8, fillColor: getStatusColor(feature.properties.status), color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 }); }
