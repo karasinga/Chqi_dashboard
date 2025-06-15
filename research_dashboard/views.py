@@ -54,7 +54,7 @@ class DashboardView(View):
             active_phases=Count('phases', filter=Q(phases__completed=False)),
             completed_milestones=Count('milestones', filter=Q(milestones__status='completed')),
             total_milestones=Count('milestones')
-        ).prefetch_related('phases', 'milestones')
+        ).prefetch_related('phases', 'milestones').order_by('-created_at')
 
         # Calculate completion percentage for each project
         today = timezone.now().date()
