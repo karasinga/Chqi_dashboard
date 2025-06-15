@@ -16,70 +16,47 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Detect environment (development or production)
+ENVIRONMENT = os.environ.get('DJANGO_ENV', 'development')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3bz(e9k-knt8inio-y(hl+5vq)ez!4hyv*&ulpn+@7m9aao1@*'
+SECRET_KEY = 'django-insecure-3bz(6@tjhgs_@51#z0zcq=xiht@5cl0+4*xsca$hl*_0r7o7#h(1&i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = ENVIRONMENT == 'development'
 
-ALLOWED_HOSTS = ['researcheval.ttl.co.ke','ttl.co.ke','localhost','127.0.0.1',]
+if ENVIRONMENT == 'production':
+    ALLOWED_HOSTS = ['researcheval.ttl.co.ke', 'ttl.co.ke']
+    CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke']
+else:  # Development environment
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000', 
+                            'http://127.0.0.1:8002', 'https://127.0.0.1:8002', 
+                            'https://localhost:8002']
 
-# # Security settings for cookies and sessions
-# # CSRF and session cookie settings
-# CSRF_COOKIE_DOMAIN = '.ttl.co.ke' if not DEBUG else None
-# CSRF_COOKIE_SECURE = not DEBUG  # Secure in production
-# CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access
-# CSRF_COOKIE_SAMESITE = 'Lax'  # Balance security and functionality
-# SESSION_COOKIE_DOMAIN = '.ttl.co.ke' if not DEBUG else None
-# SESSION_COOKIE_SECURE = not DEBUG  # Match CSRF cookie
-# SESSION_COOKIE_SAMESITE = 'Lax'  # Match CSRF cookie
-# CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke'] if not DEBUG else []
-
-# SECURITY WARNING: don't run with debug turned on in production!
-# We will set DEBUG based on the environment
-# IS_PRODUCTION = os.environ.get('DJANGO_ENV') == 'production'
-# DEBUG = not IS_PRODUCTION
-
-# # Update ALLOWED_HOSTS to be dynamic
-# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-# if IS_PRODUCTION:
-#     ALLOWED_HOSTS.extend(['researcheval.ttl.co.ke', 'ttl.co.ke'])
-
-
-# --- NEW, ROBUST SECURITY SETTINGS ---
-
-# if IS_PRODUCTION:
-# Production-only settings
-CSRF_COOKIE_DOMAIN = '.ttl.co.ke'
-SESSION_COOKIE_DOMAIN = '.ttl.co.ke'
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke']
-# You should also set this for stronger security in production
-SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 31536000 # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-# else:
-#     # Development settings (these are the defaults, but it's good to be explicit)
-#     CSRF_COOKIE_DOMAIN = None
-#     SESSION_COOKIE_DOMAIN = None
-#     CSRF_COOKIE_SECURE = False
-#     SESSION_COOKIE_SECURE = False
-#     CSRF_COOKIE_SAMESITE = 'Lax'
-#     SESSION_COOKIE_SAMESITE = 'Lax'
-#     # For local development, your origin is typically http://127.0.0.1:8000
-#     CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
-
+# Security settings
+if ENVIRONMENT == 'production':
+    # Production security settings
+    CSRF_COOKIE_DOMAIN = '.ttl.co.ke'
+    SESSION_COOKIE_DOMAIN = '.ttl.co.ke'
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    # Development security settings
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -107,8 +84,7 @@ ROOT_URLCONF = 'evaluation.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,21 +99,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'evaluation.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-# import os
-
-if not DEBUG:
+if ENVIRONMENT == 'production':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('MYSQL_DATABASE'),
-            'USER': os.environ.get('MYSQL_USER'),
-            'PASSWORD': os.environ.get('MYSQL_PASSWORD'),
-            'HOST': os.environ.get('MYSQL_HOST', 'localhost'),
-            'PORT': os.environ.get('MYSQL_PORT', '3306'),
+            'NAME': os.environ['MYSQL_DATABASE'],
+            'USER': os.environ['MYSQL_USER'],
+            'PASSWORD': os.environ['MYSQL_PASSWORD'],
+            'HOST': 'localhost',
+            'PORT': '3306',
             'OPTIONS': {
                 'charset': 'utf8mb4',
             },
@@ -147,14 +119,12 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'db.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -170,25 +140,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Authentication
 LOGIN_REDIRECT_URL = '/dashboard/'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
-
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_DIRS = [
@@ -207,5 +170,4 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

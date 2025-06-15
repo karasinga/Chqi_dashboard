@@ -9,3 +9,4 @@ plotly
 pandas==2.2.2
 numpy==1.26.4
 geopandas==1.1.0
+mysqlclient==2.2.0
