@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import DocumentUploadForm, MetricForm
+from .forms import DocumentUploadForm
 import json
 from datetime import timedelta
 import mimetypes
@@ -864,56 +864,6 @@ class ProjectTimelineView(View):
 
     
 
-class ProjectMetricsView(View):
-    """View for project metrics section"""
-    template_name = 'research_dashboard/project_detail.html'
-    
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        """Handle GET requests for project metrics"""
-        project_id = kwargs.get('project_id')
-        project = get_object_or_404(ResearchProject, pk=project_id)
-
-        context = {
-            'project': project,
-            'current_view': 'metrics',
-            'metrics': project.metrics.all(),
-            'metric_form': MetricForm(initial={'project': project}),
-        }
-
-        if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/metrics_content.html', context)
-        return render(request, self.template_name, context)
-
-    def post(self, request, project_id):
-        """Handle metric submissions"""
-        project = get_object_or_404(ResearchProject, pk=project_id)
-        form = MetricForm(request.POST)
-        if form.is_valid():
-            metric = form.save(commit=False)
-            metric.project = project
-            metric.save()
-            if request.headers.get('HX-Request'):
-                context = {
-                    'project': project,
-                    'metrics': project.metrics.all(),
-                    'metric_form': MetricForm(initial={'project': project})
-                }
-                return render(request, 'research_dashboard/partials/metrics_content.html', context)
-            return redirect('project_metrics', project_id=project.id)
-        else:
-            context = {
-                'project': project,
-                'current_view': 'metrics',
-                'metrics': project.metrics.all(),
-                'metric_form': form,
-            }
-            if request.headers.get('HX-Request'):
-                return render(request, 'research_dashboard/partials/metrics_content.html', context)
-            return render(request, self.template_name, context)
     
     # The rest of the class remains the same (post method, helper methods, etc.)
     # ...

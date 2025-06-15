@@ -1,90 +1,100 @@
-<!-- Project Overview -->
-<div class="card mb-4">
-  <div class="card-body">
-    <h5 class="card-title">Project Overview</h5>
-    <p class="card-text text-muted">{{ project.description }}</p>
+<!-- Example using the styled section -->
+<section class="map-section">
+  <!-- Note: The 'card' class is removed, as the section provides the container -->
+  <div>
+    <h5 class="card-title">Executive summary</h5>
+    <p class="card-text mt-2">
+      This is the executive summary content. It lives inside a styled section
+      but not inside a card itself, creating a cleaner look.
+    </p>
+  </div>
+</section>
 
-    <div class="row gx-4 gy-3">
-      <div class="col-md-4">
-        <div class="d-flex align-items-center p-3 bg-light rounded-3">
-          <div class="flex-shrink-0 me-3">
-            <div
-              class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-              style="width: 40px; height: 40px"
-            >
-              <i class="mdi mdi-calendar-start"></i>
-            </div>
-          </div>
-          <div class="flex-grow-1">
-            <p class="text-muted mb-0">Start Date</p>
-            <h6 class="mb-0">{{ project.start_date }}</h6>
-          </div>
+<!-- Study Area Location (Dynamic Map) - IMPROVED UI -->
+<div class="card shadow-sm border-light mb-4">
+  <div class="card-body p-3 p-lg-4">
+    <!-- Card Header: Title, Filters, and Search -->
+    <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-center gap-3 mb-3">
+      <!-- Card Title -->
+      <h5 class="card-title mb-0 me-lg-3 text-nowrap">
+        <i class="mdi mdi-map-marker-radius me-1"></i>
+        Study Area Intelligence Map
+      </h5>
+
+      <!-- Filters/Search Group -->
+      <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
+        <!-- County Filter -->
+        <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="mdi mdi-map-legend"></i></span>
+            <select id="county-filter" class="form-select">
+                <option value="all" selected>All Counties</option>
+                <!-- Options are added here by JavaScript -->
+            </select>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
+          <input
+            type="text"
+            id="map-search-box"
+            class="form-control"
+            placeholder="Search for a facility..."
+          />
+        </div>
+        <!-- NEW: Reset View Button -->
+        <button id="reset-map-view-btn" class="btn btn-sm btn-outline-secondary" title="Reset Map View">
+          <i class="mdi mdi-restart"></i>
+        </button>
+        
+        <!-- NEW: Fullscreen Button -->
+        <button id="fullscreen-map-btn" class="btn btn-sm btn-outline-secondary" title="Toggle Fullscreen">
+          <i class="mdi mdi-fullscreen"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- The Map Container -->
+    <!-- Leaflet.js will target this div to render the map -->
+    <div
+      id="study-area-map"
+      class="border rounded"
+      style="height: 500px; width: 100%;"
+    >
+      <!-- Loading Spinner (Optional but recommended) -->
+      <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading map...</span>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="d-flex align-items-center p-3 bg-light rounded-3">
-          <div class="flex-shrink-0 me-3">
-            <div
-              class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-              style="width: 40px; height: 40px"
-            >
-              <i class="mdi mdi-calendar-end"></i>
+    </div>
+
+    <!-- Map Legend (Now Interactive & Polished) -->
+    <div id="map-legend-wrapper" class="mt-3 p-2 bg-light border rounded-2">
+        <div id="map-legend" class="d-flex flex-wrap justify-content-center justify-content-md-start gap-2">
+            <!-- Legend items have an improved look and feel -->
+            <div class="legend-item active" data-status="meeting_targets" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                    <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #198754; border-radius: 50%;"></span>
+                    <span>Meeting Targets</span>
+                </div>
             </div>
-          </div>
-          <div class="flex-grow-1">
-            <p class="text-muted mb-0">End Date</p>
-            <h6 class="mb-0">{{ project.end_date|default:"-" }}</h6>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="d-flex align-items-center p-3 bg-light rounded-3">
-          <div class="flex-shrink-0 me-3">
-            <div
-              class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-              style="width: 40px; height: 40px"
-            >
-              <i class="mdi mdi-account"></i>
+            <div class="legend-item active" data-status="at_risk" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                    <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffc107; border-radius: 50%;"></span>
+                    <span>At Risk</span>
+                </div>
             </div>
-          </div>
-          <div class="flex-grow-1">
-            <p class="text-muted mb-0">Lead Researcher</p>
-            <h6 class="mb-0">{{ project.lead_researcher|default:"-" }}</h6>
-          </div>
+            <div class="legend-item active" data-status="underperforming" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                    <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%;"></span>
+                    <span>Underperforming</span>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
   </div>
 </div>
-
-<!-- Executive summary -->
-<section class="map-section">
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Executive summary</h5>
-    </div>
-  </div>
-</section>
-
-<!-- Study Area Location -->
-<section class="map-section">
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Study Area Location</h5>
-    </div>
-  </div>
-  <iframe
-    src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3988.850877043322!2d36.788972!3d-1.261777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMcKwMTUnNDIuNCJTIDM2wrA0NycyMC4zIkU!5e0!3m2!1sen!2ske!4v1749649738748!5m2!1sen!2ske"
-    width="100%"
-    height="500"
-    style="border: 0"
-    allowfullscreen=""
-    loading="lazy"
-    referrerpolicy="no-referrer-when-downgrade"
-  >
-  </iframe>
-</section>
-
 <!-- Documents -->
 <div class="card">
   <div class="card-header bg-white py-3">
@@ -140,3 +150,282 @@
     </div>
   </div>
 </div>
+
+<!-- ===================================================================
+     LEAFLET SCRIPT (WITH NEW TOPO & LIGHT BASE MAPS)
+==================================================================== -->
+<!-- At the end of your body, before closing </body> tag -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""></script>
+
+<!-- Style for the Layer Control (no changes needed here) -->
+<!-- Improved CSS for the interactive legend -->
+<style>
+  /* Base style for all legend items */
+  .legend-item {
+    padding: 0.35rem 0.85rem;
+    border-radius: 50rem; /* pill shape */
+    transition: all 0.2s ease-in-out;
+    font-size: 0.85rem;
+    border: 1px solid;
+    font-weight: 500;
+  }
+  
+  /* Add a subtle "lift" on hover for better feedback */
+  .legend-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  }
+  
+  /* Styles for INACTIVE legend items */
+  .legend-item:not(.active) {
+    background-color: #f8f9fa; /* Light gray background */
+    border-color: #dee2e6;     /* Standard light border */
+    color: #6c757d;           /* Muted text color */
+  }
+
+  /* Make the color dot inside INACTIVE items faded */
+  .legend-item:not(.active) .d-inline-block {
+    opacity: 0.4;
+  }
+
+  /* Styles for ACTIVE legend items */
+  .legend-item.active {
+    background-color: #fff;
+    opacity: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  /* Make the color dot inside ACTIVE items fully visible */
+  .legend-item.active .d-inline-block {
+    opacity: 1;
+  }
+
+  /* Apply specific colors for BORDER and TEXT on ACTIVE items */
+  .legend-item[data-status="meeting_targets"].active {
+    border-color: #198754;
+    color: #0f5132;
+  }
+  .legend-item[data-status="at_risk"].active {
+    border-color: #ffc107;
+    color: #664d03;
+  }
+  .legend-item[data-status="underperforming"].active {
+    border-color: #dc3545;
+    color: #842029;
+  }
+
+  /* A more styled approach for the section */
+
+.map-section {
+  background-color: #ffffff; /* White background */
+  padding: 1.5rem;
+  border-radius: 0.5rem; /* Matches card radius */
+  margin-bottom: 1.5rem; /* Space below the section */
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+}
+</style>
+
+
+<script>
+  // Wait for the DOM to be fully loaded before initializing the map
+  document.addEventListener('DOMContentLoaded', function () {
+    // ===================================================================
+    // STEP 1: DUMMY GEOJSON DATA (No changes)
+    // ===================================================================
+    const dummyFacilitiesGeoJSON = { /* ... same data ... */
+      "type": "FeatureCollection", "features": [ { "type": "Feature", "properties": { "name": "Kenyatta National Hospital", "county": "Nairobi", "lead": "Dr. A. Njoroge", "kpi_value": 72, "status": "underperforming" }, "geometry": { "type": "Point", "coordinates": [36.806, -1.301] } }, { "type": "Feature", "properties": { "name": "Kiambu Level 5 Hospital", "county": "Kiambu", "lead": "Dr. B. Wanjiku", "kpi_value": 96, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [36.837, -1.171] } }, { "type": "Feature", "properties": { "name": "Kitui County Referral Hospital", "county": "Kitui", "lead": "Dr. C. Mutisya", "kpi_value": 88, "status": "at_risk" }, "geometry": { "type": "Point", "coordinates": [38.016, -1.366] } }, { "type": "Feature", "properties": { "name": "Thika Level 5 Hospital", "county": "Kiambu", "lead": "Dr. D. Kamau", "kpi_value": 99, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [37.083, -1.047] } } ]
+    };
+    const dummyCountyBoundaries = { /* ... same data ... */
+        "Nairobi": [[-1.16, 36.66], [-1.44, 37.09]], "Kiambu": [[-1.25, 36.52], [-0.71, 37.26]], "Kitui": [[-2.2, 37.7], [-0.9, 38.9]]
+    };
+
+
+        // ===================================================================
+    // *** UPDATED *** STEP 2: DEFINE BASE MAPS
+    // ===================================================================
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+    
+    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 17,
+        attribution: 'Map data: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: © <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+    });
+    
+    const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    });
+
+    // Group the base maps for the layer control
+    const baseMaps = {
+        "Streets": osmLayer,
+        "Satellite": satelliteLayer,
+        "Topographic": topoLayer,
+        "Light": lightLayer
+    };
+
+
+    // ===================================================================
+    // STEP 3: INITIALIZE MAP
+    // ===================================================================
+    const mapContainer = document.getElementById('study-area-map');
+    mapContainer.innerHTML = ''; // Clear the loading spinner
+    const map = L.map(mapContainer, {
+        center: [-1.286389, 36.817223],
+        zoom: 8,
+        layers: [osmLayer] // This sets the default base map to 'Streets'
+    });
+    
+
+    // ===================================================================
+    // STEP 4: DEFINE OVERLAY LAYERS (No changes)
+    // ===================================================================
+    function getStatusColor(status) { /* ... */ switch (status) { case 'meeting_targets': return '#198754'; case 'at_risk': return '#ffc107'; case 'underperforming': return '#dc3545'; default: return '#6c757d'; } }
+    function pointToLayer(feature, latlng) { /* ... */ return L.circleMarker(latlng, { radius: 8, fillColor: getStatusColor(feature.properties.status), color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 }); }
+    function onEachFeature(feature, layer) { /* ... */ if (feature.properties) { const popupContent = `<h6 class="mb-1">${feature.properties.name}</h6><p class="text-muted mb-1 small">${feature.properties.county} County</p><hr class="my-1"><strong>Lead:</strong> ${feature.properties.lead}<br><strong>Performance:</strong> ${feature.properties.kpi_value}%`; layer.bindPopup(popupContent); layer.on('mouseover', function (e) { this.openPopup(); }); layer.on('mouseout', function (e) { this.closePopup(); }); } }
+
+    const facilityStatusLayers = { /* ... same object ... */
+        meeting_targets: L.geoJSON(dummyFacilitiesGeoJSON, { filter: (feature) => feature.properties.status === 'meeting_targets', pointToLayer: pointToLayer, onEachFeature: onEachFeature }),
+        at_risk: L.geoJSON(dummyFacilitiesGeoJSON, { filter: (feature) => feature.properties.status === 'at_risk', pointToLayer: pointToLayer, onEachFeature: onEachFeature }),
+        underperforming: L.geoJSON(dummyFacilitiesGeoJSON, { filter: (feature) => feature.properties.status === 'underperforming', pointToLayer: pointToLayer, onEachFeature: onEachFeature })
+    };
+
+    const overlayMaps = { /* ... same object ... */
+      '<span class="d-inline-block me-1" style="width: 10px; height: 10px; background-color: #198754; border-radius: 50%; vertical-align: middle;"></span> Meeting Targets': facilityStatusLayers.meeting_targets,
+      '<span class="d-inline-block me-1" style="width: 10px; height: 10px; background-color: #ffc107; border-radius: 50%; vertical-align: middle;"></span> At Risk': facilityStatusLayers.at_risk,
+      '<span class="d-inline-block me-1" style="width: 10px; height: 10px; background-color: #dc3545; border-radius: 50%; vertical-align: middle;"></span> Underperforming': facilityStatusLayers.underperforming
+    };
+    
+    Object.values(facilityStatusLayers).forEach(layer => layer.addTo(map));
+
+
+    // ===================================================================
+    // STEP 5: ADD THE LAYER CONTROL TO THE MAP (No changes)
+    // ===================================================================
+    L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+
+    // ===================================================================
+    // STEPS 6, 7, 8: LEGEND, SEARCH, and FILTER (No changes)
+    // ===================================================================
+    const legendItems = document.querySelectorAll('.legend-item');
+    legendItems.forEach(item => {
+        item.addEventListener('click', (event) => { /* ... same logic ... */
+            const status = event.currentTarget.getAttribute('data-status'); const layer = facilityStatusLayers[status]; event.currentTarget.classList.toggle('active'); if (map.hasLayer(layer)) { map.removeLayer(layer); } else { map.addLayer(layer); }
+        });
+    });
+
+    const searchBox = document.getElementById('map-search-box');
+    let searchMarker = null;
+    const initialCenter = [-1.286389, 36.817223]; const initialZoom = 8;
+    searchBox.addEventListener('input', (e) => { /* ... same logic ... */
+        const searchTerm = e.target.value.toLowerCase(); if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; } if (searchTerm.length === 0) { map.closePopup(); map.flyTo(initialCenter, initialZoom); return; } const foundFeature = dummyFacilitiesGeoJSON.features.find(feature => feature.properties.name.toLowerCase().includes(searchTerm)); if (foundFeature) { const coords = [foundFeature.geometry.coordinates[1], foundFeature.geometry.coordinates[0]]; map.flyTo(coords, 14); searchMarker = L.circleMarker(coords, { radius: 12, fillColor: '#0d6efd', color: '#fff', weight: 3, opacity: 1, fillOpacity: 0.9 }).addTo(map); Object.values(facilityStatusLayers).forEach(layerGroup => { layerGroup.eachLayer(layer => { if (layer.feature.properties.name === foundFeature.properties.name) { layer.openPopup(); } }); }); }
+    });
+    searchBox.addEventListener('search', (e) => { /* ... same logic ... */
+        if (e.target.value === '') { map.closePopup(); if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; } map.flyTo(initialCenter, initialZoom); }
+    });
+
+    const countyFilter = document.getElementById('county-filter');
+    const counties = [...new Set(dummyFacilitiesGeoJSON.features.map(feature => feature.properties.county))];
+    counties.sort().forEach(county => { /* ... same logic ... */
+        const option = document.createElement('option'); option.value = county; option.textContent = county; countyFilter.appendChild(option);
+    });
+    countyFilter.addEventListener('change', (e) => { /* ... same logic ... */
+        const selectedCounty = e.target.value; map.closePopup(); if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; } if (selectedCounty === 'all') { map.flyTo(initialCenter, initialZoom); } else { const bounds = dummyCountyBoundaries[selectedCounty]; if (bounds) { map.flyToBounds(bounds); } }
+    });
+
+    // Add fullscreen button functionality
+    const fullscreenButton = document.getElementById('fullscreen-map-btn');
+    fullscreenButton.addEventListener('click', () => {
+        const mapContainer = document.getElementById('study-area-map');
+        
+        if (!document.fullscreenElement) {
+            // Enter fullscreen
+            if (mapContainer.requestFullscreen) {
+                mapContainer.requestFullscreen();
+            } else if (mapContainer.webkitRequestFullscreen) { /* Safari */
+                mapContainer.webkitRequestFullscreen();
+            } else if (mapContainer.msRequestFullscreen) { /* IE11 */
+                mapContainer.msRequestFullscreen();
+            }
+            
+            // Update button icon
+            fullscreenButton.innerHTML = '<i class="mdi mdi-fullscreen-exit"></i>';
+            fullscreenButton.title = 'Exit Fullscreen';
+            
+            // Resize map to fit container
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) { /* Safari */
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE11 */
+                document.msExitFullscreen();
+            }
+            
+            // Update button icon
+            fullscreenButton.innerHTML = '<i class="mdi mdi-fullscreen"></i>';
+            fullscreenButton.title = 'Toggle Fullscreen';
+            
+            // Resize map to fit container
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+    });
+
+    // Handle fullscreen change events to update button state
+    document.addEventListener('fullscreenchange', () => {
+        const fullscreenButton = document.getElementById('fullscreen-map-btn');
+        if (!document.fullscreenElement) {
+            fullscreenButton.innerHTML = '<i class="mdi mdi-fullscreen"></i>';
+            fullscreenButton.title = 'Toggle Fullscreen';
+        }
+    });
+
+    // Add reset button functionality
+    const resetButton = document.getElementById('reset-map-view-btn');
+    resetButton.addEventListener('click', () => {
+        // Reset map position and zoom
+        map.flyTo(initialCenter, initialZoom);
+        map.closePopup();
+
+        // Clear any active search
+        if (searchMarker) {
+            map.removeLayer(searchMarker);
+            searchMarker = null;
+        }
+        searchBox.value = '';
+
+        // Reset the county filter dropdown
+        countyFilter.value = 'all';
+
+        // Reset the legend filters to show all layers
+        legendItems.forEach(item => {
+            const status = item.getAttribute('data-status');
+            const layer = facilityStatusLayers[status];
+            
+            // Add the layer back to the map if it was removed
+            if (!map.hasLayer(layer)) {
+                map.addLayer(layer);
+            }
+            // Ensure the legend item has the 'active' class for correct styling
+            item.classList.add('active');
+        });
+    });
+
+  }); // End of DOMContentLoaded
+</script>

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DashboardView, ProjectOverviewView, ProjectTimelineView, ProjectMetricsView
+from .views import DashboardView, ProjectOverviewView, ProjectTimelineView
 from .views import AboutView, LandingPageView, EvaluatorListView, EvaluatorUpdateView
 from .views import EvaluatorDeleteView, EvaluationView, EvaluationDetailView, EvaluationUpdateView
 from .views import update_phase_status, update_milestone_status, update_timeline_order
@@ -17,7 +17,6 @@ urlpatterns = [
     path('update_phase_status/<int:phase_id>/', update_phase_status, name='update_phase_status'),
     path('update_milestone_status/<int:milestone_id>/', update_milestone_status, name='update_milestone_status'),
     path('update_timeline_order/', update_timeline_order, name='update_timeline_order'),
-    path('project/<int:project_id>/metrics/', ProjectMetricsView.as_view(), name='project_metrics'),
     path('project/<int:project_id>/hiv_services/', ProjectHIVServicesView.as_view(), name='project_hiv_services'),
     path('project/<int:project_id>/ncd_services/', ProjectNCDServicesView.as_view(), name='project_ncd_services'),
     path('project/<int:project_id>/integration/', ProjectIntegrationView.as_view(), name='project_integration'),
