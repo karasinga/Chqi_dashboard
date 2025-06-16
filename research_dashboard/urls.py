@@ -13,6 +13,7 @@ urlpatterns = [
     path('', LandingPageView.as_view(), name='landing_page'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('project/<int:project_id>/overview/', ProjectOverviewView.as_view(), name='project_overview'),
+    path('project/<int:project_id>/', ProjectOverviewView.as_view(), name='project_detail'),
     path('project/<int:project_id>/timeline/', ProjectTimelineView.as_view(), name='project_timeline'),
     path('update_phase_status/<int:phase_id>/', update_phase_status, name='update_phase_status'),
     path('update_milestone_status/<int:milestone_id>/', update_milestone_status, name='update_milestone_status'),

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-3bz(e9k-knt8inio-y(hl+5vq)ez!4hyv*&ulpn+@7m9aao1@*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['researcheval.ttl.co.ke','ttl.co.ke','localhost','127.0.0.1',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','researcheval.ttl.co.ke','ttl.co.ke',]
 
 # # Security settings for cookies and sessions
 # # CSRF and session cookie settings
@@ -54,18 +54,18 @@ ALLOWED_HOSTS = ['researcheval.ttl.co.ke','ttl.co.ke','localhost','127.0.0.1',]
 
 # if IS_PRODUCTION:
 # Production-only settings
-CSRF_COOKIE_DOMAIN = '.ttl.co.ke'
-SESSION_COOKIE_DOMAIN = '.ttl.co.ke'
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke']
-# You should also set this for stronger security in production
-SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 31536000 # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+# CSRF_COOKIE_DOMAIN = '.ttl.co.ke'
+# SESSION_COOKIE_DOMAIN = '.ttl.co.ke'
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SAMESITE = 'Lax'
+# SESSION_COOKIE_SAMESITE = 'Lax'
+# CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke']
+# # You should also set this for stronger security in production
+# SECURE_SSL_REDIRECT = True
+# SECURE_HSTS_SECONDS = 31536000 # 1 year
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
 # else:
 #     # Development settings (these are the defaults, but it's good to be explicit)
 #     CSRF_COOKIE_DOMAIN = None
@@ -132,15 +132,15 @@ WSGI_APPLICATION = 'evaluation.wsgi.application'
 if not DEBUG:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('MYSQL_DATABASE'),
-            'USER': os.environ.get('MYSQL_USER'),
-            'PASSWORD': os.environ.get('MYSQL_PASSWORD'),
-            'HOST': os.environ.get('MYSQL_HOST', 'localhost'),
-            'PORT': os.environ.get('MYSQL_PORT', '3306'),
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-            },
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ.get('SQL_DATABASE'),
+            'USER': os.environ.get('SQL_USER'),
+            'PASSWORD': os.environ.get('SQL_PASSWORD'),
+            'HOST': os.environ.get('SQL_HOST', 'localhost'),
+            'PORT': os.environ.get('SQL_PORT', '5432'),
+            # 'OPTIONS': {
+            #     'charset': 'utf8mb4',
+            # },
         }
     }
 else:
@@ -209,3 +209,26 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+OGGING = {
+   'version': 1,
+   'disable_existing_loggers': False,
+   'handlers': {
+      'file': {
+         'level': 'DEBUG',
+         'class': 'logging.FileHandler',
+         'filename': '/tmp/debug.log',
+      },
+   },
+   'loggers': {
+      'django': {
+         'handlers': ['file'],
+         'level': 'DEBUG',
+         'propagate': True,
+      },
+   },
+}
+
+# Add trusted origins for development server
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000', 'http://127.0.0.1:8003', 'http://localhost:8003']

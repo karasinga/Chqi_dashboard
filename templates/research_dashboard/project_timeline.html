@@ -1,157 +1,140 @@
-{% extends "research_dashboard/base.html" %}
-{% load static %}
-
-{% block content %}
-<div class="container">
-    
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4>{{ project.title }}</h4>
-        <div>
-            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addPhaseModal">
-                <i class="mdi mdi-plus"></i> Add Phase
-            </button>
-            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
-                <i class="mdi mdi-plus"></i> Add Milestone
-            </button>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>{{ project.title }}</h4>
+    <div>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addPhaseModal">
+            <i class="mdi mdi-plus"></i> Add Phase
+        </button>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
+            <i class="mdi mdi-plus"></i> Add Milestone
+        </button>
     </div>
+</div>
 
-    <!-- Gantt Chart -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="card-title mb-0">Timeline</h5>
-            </div>
-            {{ gantt_chart|safe }}
+<!-- Gantt Chart -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">Timeline</h5>
         </div>
+        {{ gantt_chart|safe }}
     </div>
+</div>
 
-    <div class="row">
-        <!-- Phases Column -->
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Phases</h5>
-                        <span class="badge bg-light text-dark">
-                            {{ phases|length }} total
-                        </span>
-                    </div>
-                    
-                    <div class="list-group list-group-flush phase-milestone-list" 
-                         style="max-height: 300px; overflow-y: auto;">
-                        {% for phase in phases %}
-                        <div class="list-group-item border-0 px-0 py-2 draggable-item" data-id="{{ milestone.id }}" data-type="milestone">
-                                <div class="d-flex justify-content-between align-items-center flex-nowrap mb-1">
-                                    <strong class="text-truncate me-2">{{ phase.get_phase_type_display }}</strong>
-                                    <div class="form-check form-switch d-inline-block">
-                                        <input class="form-check-input status-toggle" type="checkbox"
-                                               data-type="phase" data-id="{{ phase.id }}"
-                                               {% if phase.completed %}checked{% endif %}>
-                                        <span class="badge {% if phase.completed %}bg-success{% else %}bg-warning{% endif %} ms-2">
-                                            {% if phase.completed %}Completed{% else %}Active{% endif %}
-                                        </span>
-                                    </div>
+<div class="row">
+    <!-- Phases Column -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Phases</h5>
+                    <span class="badge bg-light text-dark">
+                        {{ phases|length }} total
+                    </span>
+                </div>
+                
+                <div class="list-group list-group-flush phase-milestone-list"
+                     style="max-height: 300px; overflow-y: auto;">
+                    {% for phase in phases %}
+                    <div class="list-group-item border-0 px-0 py-2">
+                            <div class="d-flex justify-content-between align-items-center flex-nowrap mb-1">
+                                <strong class="text-truncate me-2">{{ phase.get_phase_type_display }}</strong>
+                                <!-- Replaced toggle with a simple badge -->
+                                <span class="badge {% if phase.completed %}bg-success{% else %}bg-warning{% endif %}">
+                                    {% if phase.completed %}Completed{% else %}Active{% endif %}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center flex-nowrap">
+                                <p class="text-muted mb-0 small text-truncate">
+                                    {{ phase.start_date|date:"F j, Y" }} to {{ phase.end_date|date:"F j, Y" }}
+                                </p>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-secondary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editPhaseModal"
+                                            data-phase-id="{{ phase.id }}"
+                                            data-phase-type="{{ phase.phase_type }}"
+                                            data-start-date="{{ phase.start_date|date:'Y-m-d' }}"
+                                            data-end-date="{{ phase.end_date|date:'Y-m-d' }}"
+                                            data-notes="{{ phase.notes|default_if_none:'' }}"
+                                            data-completed="{{ phase.completed|yesno:'on,' }}">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deletePhaseModal"
+                                            data-phase-id="{{ phase.id }}">
+                                        <i class="mdi mdi-delete"></i>
+                                    </button>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center flex-nowrap">
-                                    <p class="text-muted mb-0 small text-truncate">
-                                        {{ phase.start_date }} to {{ phase.end_date }}
-                                    </p>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editPhaseModal"
-                                                data-phase-id="{{ phase.id }}"
-                                                data-phase-type="{{ phase.phase_type }}"
-                                                data-start-date="{{ phase.start_date|date:'Y-m-d' }}"
-                                                data-end-date="{{ phase.end_date|date:'Y-m-d' }}"
-                                                data-notes="{{ phase.notes }}"
-                                                data-completed="{{ phase.completed }}">
-                                            <i class="mdi mdi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#deletePhaseModal"
-                                                data-phase-id="{{ phase.id }}">
-                                            <i class="mdi mdi-delete"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            {% if phase.notes %}
-                            <p class="mt-2 small text-muted">{{ phase.notes }}</p>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
+                            </div>
+                        {% if phase.notes %}
+                        <p class="mt-2 small text-muted">{{ phase.notes }}</p>
+                        {% endif %}
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Milestones Column -->
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Milestones</h5>
-                        <span class="badge bg-light text-dark me-2">
-                            {{ milestones|length }} total
-                        </span>                            
-                    </div>
-                    
-                    <div class="list-group list-group-flush phase-milestone-list" 
-                         style="max-height: 300px; overflow-y: auto;">
-                        {% for milestone in milestones %}
-                        <div class="list-group-item border-0 px-0 py-2 draggable-item" data-id="{{ phase.id }}" data-type="phase">
-                                <div class="d-flex justify-content-between align-items-center flex-nowrap mb-1">
-                                    <strong class="text-truncate me-2">{{ milestone.name }}</strong>
-                                    <div class="form-check form-switch d-inline-block">
-                                        <input class="form-check-input status-toggle" type="checkbox"
-                                               data-type="milestone" data-id="{{ milestone.id }}"
-                                               {% if milestone.status == 'completed' %}checked{% endif %}>
-                                        <span class="badge ms-2
-                                            {% if milestone.status == 'completed' %}bg-success
-                                            {% elif milestone.status == 'overdue' %}bg-danger
-                                            {% else %}bg-info{% endif %}">
-                                            {{ milestone.get_status_display }}
-                                        </span>
-                                    </div>
+    <!-- Milestones Column -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Milestones</h5>
+                    <span class="badge bg-light text-dark me-2">
+                        {{ milestones|length }} total
+                    </span>
+                </div>
+                
+                <div class="list-group list-group-flush phase-milestone-list"
+                     style="max-height: 300px; overflow-y: auto;">
+                    {% for milestone in milestones %}
+                    <div class="list-group-item border-0 px-0 py-2">
+                            <div class="d-flex justify-content-between align-items-center flex-nowrap mb-1">
+                                <strong class="text-truncate me-2">{{ milestone.name }}</strong>
+                                <!-- Replaced toggle with a simple badge -->
+                                <span class="badge
+                                    {% if milestone.status == 'completed' %}bg-success
+                                    {% elif milestone.status == 'overdue' %}bg-danger
+                                    {% else %}bg-info{% endif %}">
+                                    {{ milestone.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center flex-nowrap">
+                                <p class="text-muted mb-0 small text-truncate">
+                                    Due {{ milestone.due_date|date:"F j, Y" }}
+                                </p>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-secondary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editMilestoneModal"
+                                            data-milestone-id="{{ milestone.id }}"
+                                            data-name="{{ milestone.name }}"
+                                            data-due-date="{{ milestone.due_date|date:'Y-m-d' }}"
+                                            data-description="{{ milestone.description|default_if_none:'' }}"
+                                            data-status="{{ milestone.status }}">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteMilestoneModal"
+                                            data-milestone-id="{{ milestone.id }}">
+                                        <i class="mdi mdi-delete"></i>
+                                    </button>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center flex-nowrap">
-                                    <p class="text-muted mb-0 small text-truncate">
-                                        Due {{ milestone.due_date }}
-                                    </p>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#editMilestoneModal"
-                                                data-milestone-id="{{ milestone.id }}"
-                                                data-name="{{ milestone.name }}"
-                                                data-due-date="{{ milestone.due_date|date:'Y-m-d' }}"
-                                                data-description="{{ milestone.description }}"
-                                                data-status="{{ milestone.status }}">
-                                            <i class="mdi mdi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#deleteMilestoneModal"
-                                                data-milestone-id="{{ milestone.id }}">
-                                            <i class="mdi mdi-delete"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            {% if milestone.description %}
-                            <p class="mt-2 small text-muted">{{ milestone.description }}</p>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
+                            </div>
+                        {% if milestone.description %}
+                        <p class="mt-2 small text-muted">{{ milestone.description }}</p>
+                        {% endif %}
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-{% include "research_dashboard/modals.html" %}
 
 <script>
 function initializePlotlyChart() {
@@ -210,51 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Handle status toggle changes
-    document.querySelectorAll('.status-toggle').forEach(toggle => {
-        toggle.addEventListener('change', function() {
-            const type = this.dataset.type;
-            const id = this.dataset.id;
-            const status = this.checked ? 'completed' : 'pending';
-            
-            fetch(`/update-${type}-status/${id}/`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({status: status})
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Update the badge text and class
-                    const badge = toggle.closest('.form-check').querySelector('.badge');
-                    if (badge) {
-                        badge.textContent = data.status_display;
-                        badge.className = 'badge ms-2 ' + 
-                            (data.new_status === 'completed' ? 'bg-success' : 
-                             data.new_status === 'overdue' ? 'bg-danger' : 'bg-info');
-                    }
-                    // Refresh the Gantt chart after status update
-                    initializePlotlyChart();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Revert the toggle if there was an error
-                toggle.checked = !toggle.checked;
-                if (error.error) {
-                    alert(error.error);
-                }
-            });
-        });
-    });
+    // REMOVED THE .status-toggle javascript block
 });
 
 // Fallback in case DOMContentLoaded doesn't fire
@@ -264,4 +203,3 @@ if (document.readyState !== 'loading') {
     window.addEventListener('load', initializePlotlyChart);
 }
 </script>
-{% endblock content %}

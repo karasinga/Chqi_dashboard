@@ -1,3 +1,5 @@
+<!-- project_detail.html -->
+
 {% extends "research_dashboard/base.html" %}
 {% load static %}
 
@@ -16,14 +18,25 @@
             {% include 'research_dashboard/partials/overview_content.html' %}
         {% elif current_view == 'timeline' %}
             {% include 'research_dashboard/partials/timeline_content.html' %}
-        {% elif current_view == 'metrics' %}
-            {% include 'research_dashboard/partials/metrics_content.html' %}
+        {% elif current_view == 'hiv_services' %}
+            {% include 'research_dashboard/partials/hiv_services_content.html' %}
+        {% elif current_view == 'ncd_services' %}
+            {% include 'research_dashboard/partials/ncd_services_content.html' %}
+        {% elif current_view == 'integration' %}
+            {% include 'research_dashboard/partials/integration_content.html' %}
+        {% elif current_view == 'stock_supply' %}
+            {% include 'research_dashboard/partials/stock_supply_content.html' %}
+        {% elif current_view == 'referral_linkage' %}
+            {% include 'research_dashboard/partials/referral_linkage_content.html' %}
+        {% elif current_view == 'data_quality' %}
+            {% include 'research_dashboard/partials/data_quality_content.html' %}
+        {% elif current_view == 'disaggregation' %}
+            {% include 'research_dashboard/partials/disaggregation_content.html' %}
         {% else %}
             {% include 'research_dashboard/partials/overview_content.html' %}
         {% endif %}
     </div>
     
-    <!-- Hidden field to store current view for form submissions -->
     <input type="hidden" id="current-view" value="{{ current_view }}">
 </div>
 
@@ -38,89 +51,81 @@
         const projectContent = document.getElementById('project-content');
         const currentViewInput = document.getElementById('current-view');
 
+        // =========================================================================
+        // SCRIPT RE-EXECUTION HELPER
+        // This function finds and re-runs scripts from the fetched HTML.
+        // =========================================================================
+        function executeScripts(container) {
+            const scripts = container.querySelectorAll("script");
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement("script");
+                // Copy all attributes from the old script to the new one
+                Array.from(oldScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+                // Copy the content of the script
+                newScript.text = oldScript.innerHTML;
+                // Replace the old script with the new one to trigger execution
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        // This function will handle loading content
+        function loadView(url, view, pushState = true) {
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(html => {
+                projectContent.innerHTML = html;
+                currentViewInput.value = view;
+
+                // ===============================================
+                // KEY CHANGE: Execute scripts after content swap
+                // ===============================================
+                executeScripts(projectContent);
+
+                if (window.initializeAllModals) {
+                    window.initializeAllModals();
+                }
+                
+                projectNavLinks.forEach(navLink => {
+                    navLink.classList.remove('active');
+                    if (navLink.dataset.view === view) {
+                        navLink.classList.add('active');
+                    }
+                });
+
+                if (pushState) {
+                    history.pushState({view: view}, '', url);
+                }
+            })
+            .catch(error => {
+                projectContent.innerHTML = `<div class="alert alert-danger">Error loading content: ${error.message}</div>`;
+                console.error('Error loading content:', error);
+            });
+        }
+
+        // --- Event Listeners ---
         projectNavLinks.forEach(link => {
             link.addEventListener('click', function (e) {
                 e.preventDefault();
-
-                const view = this.dataset.view;
-                const url = this.href;
-
-                fetch(url)
-                    .then(response => response.text())
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const newContent = doc.getElementById('project-content');
-                        
-                        projectContent.innerHTML = newContent.innerHTML;
-
-                        // Re-evaluate script tags
-                        const scripts = newContent.querySelectorAll('script');
-                        scripts.forEach(script => {
-                            const newScript = document.createElement('script');
-                            if (script.src) {
-                                newScript.src = script.src;
-                            } else {
-                                newScript.innerHTML = script.innerHTML;
-                            }
-                            projectContent.appendChild(newScript);
-                        });
-                        currentViewInput.value = view;
-
-                        // Update active class on nav links
-                        projectNavLinks.forEach(navLink => {
-                            navLink.classList.remove('active');
-                        });
-                        this.classList.add('active');
-
-                        // Update URL in browser
-                        history.pushState({view: view}, '', url);
-                    })
-                    .catch(error => {
-                        console.error('Error loading content:', error);
-                    });
+                loadView(this.href, this.dataset.view);
             });
         });
 
         window.addEventListener('popstate', function (event) {
             if (event.state && event.state.view) {
-                const url = location.href;
-                fetch(url)
-                    .then(response => response.text())
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const newContent = doc.getElementById('project-content');
-                        
-                        projectContent.innerHTML = newContent.innerHTML;
-
-                        // Re-evaluate script tags
-                        const scripts = newContent.querySelectorAll('script');
-                        scripts.forEach(script => {
-                            const newScript = document.createElement('script');
-                            if (script.src) {
-                                newScript.src = script.src;
-                            } else {
-                                newScript.innerHTML = script.innerHTML;
-                            }
-                            projectContent.appendChild(newScript);
-                        });
-                        currentViewInput.value = event.state.view;
-
-                        // Update active class on nav links
-                        projectNavLinks.forEach(navLink => {
-                            navLink.classList.remove('active');
-                            if (navLink.dataset.view === event.state.view) {
-                                navLink.classList.add('active');
-                            }
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error loading content on popstate:', error);
-                    });
+                loadView(location.href, event.state.view, false);
             }
         });
+
+        // --- Initial Load Execution ---
+        // This handles the Gantt chart if the timeline is the first page loaded.
+        executeScripts(projectContent);
     });
 </script>
-
 {% endblock scripts %}

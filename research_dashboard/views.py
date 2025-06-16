@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, ListView, UpdateView, DetailView
 from .models import ResearchProject, Evaluator, Evaluation, EvaluationPhase, ProjectMilestone, ResearchDocument
-from .forms import MilestoneStatusForm, ProjectMilestoneForm
+from .forms import MilestoneStatusForm, ProjectMilestoneForm, MetricForm
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -18,6 +18,10 @@ from django.http import HttpResponse, JsonResponse
 import os
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+import plotly.graph_objects as go
+from plotly.offline import plot
+import pandas as pd
+from datetime import datetime
 
 class DashboardView(View):
     """Improved view for research project dashboard"""
@@ -34,9 +38,7 @@ class DashboardView(View):
         date_to = request.GET.get('date_to')
         project_name = request.GET.get('project_name')
         
-        
         base_projects = ResearchProject.objects.all()
-        
         projects = base_projects
         
         # Apply filters if specified
@@ -63,7 +65,6 @@ class DashboardView(View):
                 total_days = (project.end_date - project.start_date).days
                 elapsed_days = (today - project.start_date).days
                 
-                # Handle cases where total_days is zero or negative
                 if total_days <= 0:
                     project.completion_percent = 100 if elapsed_days >= 0 else 0
                 else:
@@ -74,13 +75,12 @@ class DashboardView(View):
                     else:
                         project.completion_percent = min(100, max(0, int((elapsed_days / total_days) * 100)))
             else:
-                # Fallback to milestone-based calculation
                 if project.total_milestones > 0:
                     project.completion_percent = int((project.completed_milestones / project.total_milestones) * 100)
                 else:
                     project.completion_percent = 0
 
-        # Calculate status counts for all projects (not just filtered ones)
+        # Calculate status counts for all projects
         status_counts = {
             status: base_projects.filter(status=status).count()
             for status, _ in ResearchProject.PROJECT_STATUS
@@ -110,7 +110,6 @@ class DashboardView(View):
         project_id = request.POST.get('project_id')
         try:
             if project_id:
-                # Update existing project - verify ownership
                 project = ResearchProject.objects.get(pk=project_id)
                 project.title = request.POST.get('title')
                 project.description = request.POST.get('description')
@@ -120,7 +119,6 @@ class DashboardView(View):
                 project.save()
                 messages.success(request, 'Project updated successfully!')
             else:
-                # Create new project
                 ResearchProject.objects.create(
                     title=request.POST.get('title'),
                     description=request.POST.get('description'),
@@ -211,7 +209,7 @@ class ProjectOverviewView(View):
             'document_form': DocumentUploadForm(),
         }
 
-        if request.headers.get('HX-Request'):
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return render(request, 'research_dashboard/partials/overview_content.html', context)
         return render(request, self.template_name, context)
 
@@ -291,7 +289,7 @@ def update_milestone_status(request, milestone_id):
 
     if status:
         milestone.status = status
-    if completed_date is not None:  # Could be None if status changed from completed
+    if completed_date is not None:
         milestone.completed_date = completed_date
     
     milestone.save()
@@ -311,7 +309,7 @@ def update_timeline_order(request):
     for item in items:
         if item['type'] == 'phase':
             obj = get_object_or_404(EvaluationPhase, id=item['id'])
-        else:  # milestone
+        else:
             obj = get_object_or_404(ProjectMilestone, id=item['id'])
             
         obj.order = item['order']
@@ -319,1098 +317,239 @@ def update_timeline_order(request):
     
     return JsonResponse({'success': True})
 
+
+# In your views.py
+
 class ProjectTimelineView(View):
     """View for project timeline section"""
     template_name = 'research_dashboard/project_detail.html'
+    partial_template = 'research_dashboard/partials/timeline_content.html'
     
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
+    def _is_htmx_request(self, request):
+        """Check if request is HTMX or AJAX"""
+        return request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    def _get_base_context(self, project):
+        """Get common context for timeline views"""
+        tasks = self._prepare_tasks_data(project)
+        return {
+            'project': project,
+            'current_view': 'timeline',
+            'phases': project.phases.all().order_by('start_date'),
+            'milestones': project.milestones.all().order_by('due_date'),
+            'gantt_chart': self._generate_gantt_chart(tasks) if tasks else '<div class="alert alert-info">No timeline data to display.</div>',
+            'form': ProjectMilestoneForm()
+        }
+
     def get(self, request, *args, **kwargs):
         """Handle GET requests for project timeline"""
-        project_id = kwargs.get('project_id')
+        project = get_object_or_404(ResearchProject, pk=kwargs.get('project_id'))
+        context = self._get_base_context(project)
+        
+        if self._is_htmx_request(request):
+            return render(request, self.partial_template, context)
+        # Assuming project_timeline.html is the correct full page template
+        return render(request, self.template_name, context)
+    
+    # In your views.py
+
+# ... keep all other class methods like get, _is_htmx_request, etc. ...
+
+    # =========================================================================
+    # REVISED POST AND PHASE HANDLER METHODS
+    # =========================================================================
+
+    def post(self, request, project_id):
+        """Handle all timeline POST operations."""
         project = get_object_or_404(ResearchProject, pk=project_id)
+
+        # Determine if this is a phase operation (add, update, or delete)
+        # We check for a field common to add/edit forms, or the delete signal.
+        if 'phase_type' in request.POST or 'delete_phase' in request.POST:
+            return self._handle_phase_operation(request, project)
+
+        # Determine if this is a milestone operation
+        if 'add_milestone' in request.POST or 'update_milestone' in request.POST:
+            return self._handle_milestone_operation(request, project, ProjectMilestoneForm)
+        if request.POST.get('_method') == 'DELETE' and 'milestone_id' in request.POST:
+             return self._delete_milestone(request, project)
+            
+        return self._error_response('Invalid request. The action was not recognized.')
+
+    def _handle_phase_operation(self, request, project):
+        """Intelligently routes phase operations based on POST data."""
+        # Route to delete if the _method is DELETE
+        if request.POST.get('_method') == 'DELETE':
+            return self._delete_phase(request, project)
+            
+        # Route to update if a phase_id is present and has a value
+        if 'phase_id' in request.POST and request.POST.get('phase_id'):
+            return self._update_phase(request, project)
         
-        # Initialize form
-        form = ProjectMilestoneForm()
-        
-        # Check if editing existing milestone
-        milestone_id = request.GET.get('milestone_id')
-        if milestone_id:
-            try:
-                milestone = ProjectMilestone.objects.get(pk=milestone_id, project=project)
-                form = ProjectMilestoneForm(instance=milestone)
-            except ProjectMilestone.DoesNotExist:
-                pass
-        
-        # Prepare timeline data
+        # Otherwise, assume it's a create operation
+        return self._create_phase(project, request.POST)
+
+    def _create_phase(self, project, post_data):
+        """Create a new phase"""
+        try:
+            EvaluationPhase.objects.create(
+                project=project,
+                phase_type=post_data.get('phase_type'),
+                start_date=post_data.get('start_date'),
+                end_date=post_data.get('end_date'),
+                notes=post_data.get('notes', ''),
+                # 'completed' checkbox is not in the add form, so it defaults to False
+            )
+            return self._success_response('Phase added successfully!', project)
+        except Exception as e:
+            return self._error_response(f'Error creating phase: {str(e)}')
+
+    def _update_phase(self, request, project):
+        """Update an existing phase"""
+        try:
+            phase = get_object_or_404(EvaluationPhase, pk=request.POST.get('phase_id'), project=project)
+            phase.phase_type = request.POST.get('phase_type')
+            phase.start_date = request.POST.get('start_date')
+            phase.end_date = request.POST.get('end_date')
+            # An HTML checkbox's value is 'on' if checked, and it's absent from POST data if not.
+            phase.completed = request.POST.get('completed') == 'on'
+            phase.notes = request.POST.get('notes', '')
+            phase.save()
+            return self._success_response('Phase updated successfully!', project)
+        except Exception as e:
+            return self._error_response(f'Error updating phase: {str(e)}')
+
+    def _delete_phase(self, request, project):
+        """Delete a phase"""
+        try:
+            phase = get_object_or_404(EvaluationPhase, pk=request.POST.get('phase_id'), project=project)
+            phase.delete()
+            return self._success_response('Phase deleted successfully!', project)
+        except Exception as e:
+            return self._error_response(f'Error deleting phase: {str(e)}')
+
+    # --- KEEP ALL YOUR OTHER METHODS ---
+    # (e.g., _handle_milestone_operation, _success_response, _generate_gantt_chart, etc.)
+    # They are correct and do not need to be changed.
+    # ...
+
+
+     
+    
+    
+    
+    
+    
+    
+    
+    # --- Milestone and other helper methods remain the same ---
+    # ... (keep all your other methods like _handle_milestone_operation, _create_milestone, _success_response, etc.)
+    # Make sure they are correctly indented within the class.
+    def _handle_milestone_operation(self, request, project, form_class):
+        """Handle milestone creation/update"""
+        if request.POST.get('_method') == 'DELETE':
+            return self._delete_milestone(request, project)
+            
+        form = form_class(request.POST)
+        if not form.is_valid():
+            return self._form_error_response(form)
+            
+        try:
+            if request.POST.get('milestone_id'):
+                return self._update_milestone(request, project, form)
+            else:
+                return self._create_milestone(project, form)
+        except Exception as e:
+            return self._error_response(f'Error modifying milestone: {str(e)}')
+
+    def _create_milestone(self, project, form):
+        """Create a new milestone"""
+        milestone = form.save(commit=False)
+        milestone.project = project
+        milestone.save()
+        return self._success_response('Milestone added successfully!', project)
+
+    def _update_milestone(self, request, project, form):
+        """Update an existing milestone"""
+        milestone = get_object_or_404(ProjectMilestone,
+            pk=request.POST.get('milestone_id'),
+            project=project
+        )
+        milestone.name = form.cleaned_data['name']
+        milestone.due_date = form.cleaned_data['due_date']
+        milestone.description = form.cleaned_data['description']
+        milestone.status = request.POST.get('status', milestone.status)
+        milestone.save()
+        return self._success_response('Milestone updated successfully!', project)
+
+    def _delete_milestone(self, request, project):
+        """Delete a milestone"""
+        milestone = get_object_or_404(ProjectMilestone,
+            pk=request.POST.get('milestone_id'),
+            project=project
+        )
+        milestone.delete()
+        return self._success_response('Milestone deleted successfully!', project)
+
+    def _success_response(self, message, project):
+        """Generate success response"""
+        messages.success(self.request, message)
+        if self._is_htmx_request(self.request):
+            context = self._get_base_context(project)
+            response = render(self.request, self.partial_template, context)
+            response['HX-Trigger'] = 'timelineUpdated'
+            return response
+        return redirect('project_timeline', project_id=project.id)
+
+    def _error_response(self, error_message):
+        """Generate error response"""
+        messages.error(self.request, error_message)
+        project_id = self.kwargs.get('project_id')
+        if self._is_htmx_request(self.request):
+            return HttpResponse(f'<div class="alert alert-danger">{error_message}</div>', status=400)
+        return redirect('project_timeline', project_id=project_id)
+
+    def _form_error_response(self, form):
+        """Handle form validation errors"""
+        error_message = 'Invalid form data. Please check the inputs.'
+        if self._is_htmx_request(self.request):
+            # This could be enhanced to return specific field errors
+            return HttpResponse(f'<div class="alert alert-danger">{error_message}</div>', status=400)
+        messages.error(self.request, error_message)
+        return redirect('project_timeline', project_id=self.kwargs.get('project_id'))
+
+    # ... Paste the rest of your view's methods here (_prepare_tasks_data, _generate_gantt_chart, etc.)
+    # They should work as-is with these changes.
+    def _prepare_tasks_data(self, project):
+        """Prepare tasks data for Gantt chart visualization"""
         tasks = []
         for phase in project.phases.all():
-            start_date_str = phase.start_date.strftime('%Y-%m-%d') if phase.start_date else None
-            end_date_str = phase.end_date.strftime('%Y-%m-%d') if phase.end_date else None
-            if start_date_str and end_date_str:
+            if phase.start_date and phase.end_date:
                 tasks.append({
                     'id': f'phase-{phase.id}',
                     'name': phase.get_phase_type_display(),
-                    'start': start_date_str,
-                    'end': end_date_str,
+                    'start': phase.start_date.strftime('%Y-%m-%d'),
+                    'end': phase.end_date.strftime('%Y-%m-%d'),
                     'progress': 100 if phase.completed else 0,
                     'dependencies': ''
                 })
         for milestone in project.milestones.all():
             if milestone.due_date:
-                due_date = milestone.due_date
                 tasks.append({
                     'id': f'milestone-{milestone.id}',
                     'name': f"★ {milestone.name}",
-                    'start': due_date.strftime('%Y-%m-%d'),
-                    'end': (due_date + timedelta(days=1)).strftime('%Y-%m-%d'),
+                    'start': milestone.due_date.strftime('%Y-%m-%d'),
+                    'end': (milestone.due_date + timedelta(days=1)).strftime('%Y-%m-%d'),
                     'progress': 100 if milestone.status == 'completed' else 0,
                     'dependencies': '',
                     'custom_class': 'milestone',
                     'milestone': True
                 })
-        gantt_chart = self._generate_gantt_chart(tasks) if tasks else '<div class="alert alert-info">No phases or milestones with valid dates defined for this project to generate a timeline.</div>'
-
-        context = {
-            'project': project,
-            'current_view': 'timeline',
-            'phases': project.phases.all(),
-            'milestones': project.milestones.all(),
-            'gantt_chart': gantt_chart,
-            'form': form
-        }
-
-        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render(request, 'research_dashboard/partials/timeline_content.html', context)
-        return render(request, self.template_name, context)
-
-    def post(self, request, project_id):
-        """Handle timeline operations (phases and milestones)"""
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.debug(f"Received POST request for project {project_id}")
-        logger.debug(f"POST data: {request.POST}")
-        
-        project = get_object_or_404(ResearchProject, pk=project_id)
-        
-        # Handle AJAX status updates
-        if 'update_phase_status' in request.POST:
-            try:
-                phase = EvaluationPhase.objects.get(
-                    pk=request.POST.get('phase_id'),
-                    project_id=project_id
-                )
-                phase.completed = request.POST.get('status') == 'completed'
-                phase.save()
-                return JsonResponse({'success': True})
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': str(e)}, status=400)
-                
-        elif 'update_milestone_status' in request.POST:
-            try:
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.status = request.POST.get('status')
-                milestone.save()
-                return JsonResponse({'success': True})
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': str(e)}, status=400)
-                
-        elif 'update_timeline_order' in request.POST:
-            try:
-                items = json.loads(request.POST.get('items', '[]'))
-                for item in items:
-                    if item['type'] == 'phase':
-                        obj = EvaluationPhase.objects.get(pk=item['id'], project_id=project_id)
-                    else:  # milestone
-                        obj = ProjectMilestone.objects.get(pk=item['id'], project_id=project_id)
-                    obj.order = item['order']
-                    obj.save()
-                return JsonResponse({'success': True})
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': str(e)}, status=400)
-        
-        # Existing CRUD operations below...
-        if request.POST.get('_method') == 'DELETE' and request.POST.get('phase_id'):
-            try:
-                phase = EvaluationPhase.objects.get(
-                    pk=request.POST.get('phase_id'),
-                    project_id=project_id
-                )
-                phase.delete()
-                if request.headers.get('HX-Request'):
-                    context = self._get_timeline_context(project)
-                    response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    response['HX-Redirect'] = request.path_info
-                    return response
-                messages.success(request, 'Phase deleted successfully!')
-                return redirect('project_timeline', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error deleting phase: {str(e)}')
-            return redirect('project_timeline', project_id=project_id)
-            
-        elif 'phase_type' in request.POST:
-            try:
-                if request.POST.get('phase_id'):
-                    return self._handle_phase_update(request, project_id)
-                else:
-                    phase = EvaluationPhase.objects.create(
-                        project=project,
-                        phase_type=request.POST.get('phase_type'),
-                        start_date=request.POST.get('start_date'),
-                        end_date=request.POST.get('end_date'),
-                        notes=request.POST.get('notes')
-                    )
-                    if request.headers.get('HX-Request'):
-                        context = self._get_timeline_context(project)
-                        response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                        response['HX-Redirect'] = request.path_info
-                        return response
-                    messages.success(request, 'Phase added successfully!')
-                    return redirect('project_timeline', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error modifying phase: {str(e)}')
-            return redirect('project_timeline', project_id=project_id)
-
-        # Milestone CRUD operations
-        elif 'add_milestone' in request.POST:
-            try:
-                logger.debug("Processing add_milestone request")
-                form = ProjectMilestoneForm(request.POST)
-                if form.is_valid():
-                    milestone = form.save(commit=False)
-                    milestone.project = project
-                    milestone.save()
-                    logger.debug(f"Created milestone: {milestone}")
-                    
-                    # Prepare response data
-                    response_data = {
-                        'success': True,
-                        'message': 'Milestone added successfully!'
-                    }
-                    
-                    if request.headers.get('HX-Request'):
-                        context = {
-                            'project': project,
-                            'phases': project.phases.all().order_by('order'),
-                            'milestones': project.milestones.all().order_by('order'),
-                            'gantt_chart': self._generate_gantt_chart(self._prepare_tasks_data(project))
-                        }
-                        response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                        response['HX-Trigger-After-Settle'] = 'milestoneSaved'
-                        response['HX-Trigger'] = 'timelineUpdated'
-                        return response
-                    
-                    messages.success(request, 'Milestone added successfully!')
-                    return JsonResponse(response_data) if (request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest') else redirect('project_timeline', project_id=project_id)
-                else:
-                    error_message = 'Invalid milestone data. Please check the form.'
-                    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({
-                            'success': False,
-                            'errors': form.errors.as_json(),
-                            'message': error_message
-                        }, status=400)
-                    messages.error(request, error_message)
-            except Exception as e:
-                error_message = f'Error adding milestone: {str(e)}'
-                if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': False,
-                        'message': error_message
-                    }, status=400)
-                messages.error(request, error_message)
-            
-            return JsonResponse({'success': False}, status=400) if (request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest') else redirect('project_timeline', project_id=project_id)
-
-        elif 'update_milestone' in request.POST:
-            try:
-                logger.debug("Processing update_milestone request")
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.name = request.POST.get('name')
-                milestone.due_date = request.POST.get('due_date')
-                milestone.description = request.POST.get('description')
-                milestone.status = request.POST.get('status', milestone.status)
-                milestone.save()
-                
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all(),
-                        'milestones': project.milestones.all(),
-                        'gantt_chart': self._generate_gantt_chart(self._prepare_tasks_data(project))
-                    }
-                    response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    response['HX-Trigger'] = 'milestoneUpdated'
-                    return response
-                    
-                messages.success(request, 'Milestone updated successfully!')
-                return redirect('project_timeline', project_id=project_id)
-            except Exception as e:
-                logger.error(f"Error updating milestone: {str(e)}")
-                messages.error(request, f'Error updating milestone: {str(e)}')
-                if request.headers.get('HX-Request'):
-                    return JsonResponse({'success': False, 'error': str(e)}, status=400)
-                return redirect('project_timeline', project_id=project_id)
-
-        elif request.POST.get('_method') == 'DELETE' and request.POST.get('milestone_id'):
-            try:
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.delete()
-                if request.headers.get('HX-Request'):
-                    context = self._get_timeline_context(project)
-                    response = render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    response['HX-Redirect'] = request.path_info
-                    return response
-                messages.success(request, 'Milestone deleted successfully!')
-                return redirect('project_timeline', project_id=project_id)
-            except Exception as e:
-                messages.error(request, 'Error deleting milestone: {str(e)}')
-            return redirect('project_timeline', project_id=project_id)
-
-    def _get_timeline_context(self, project):
-        """Get context for timeline view"""
-        tasks = self._prepare_tasks_data(project)
-        gantt_chart = self._generate_gantt_chart(tasks) if tasks else '<div class="alert alert-info">No timeline data</div>'
-        
-        return {
-            'project': project,
-            'phases': project.phases.all(),
-            'milestones': project.milestones.all(),
-            'gantt_chart': gantt_chart
-        }
-
-    def _handle_phase_update(self, request, project_id):
-        """Handle phase update (internal method)"""
-        phase = EvaluationPhase.objects.get(
-            pk=request.POST.get('phase_id'),
-            project_id=project_id
-        )
-        phase.phase_type = request.POST.get('phase_type')
-        phase.start_date = request.POST.get('start_date')
-        phase.end_date = request.POST.get('end_date')
-        phase.notes = request.POST.get('notes')
-        phase.completed = 'completed' in request.POST
-        phase.save()
-        messages.success(request, 'Phase updated successfully!')
-        return redirect('project_timeline', project_id=project_id)
-
-    def _prepare_tasks_data(self, project):
-        """Prepare tasks data for Gantt chart visualization"""
-        tasks = []
-        for phase in project.phases.order_by('order'):
-            tasks.append({
-                'id': f'phase-{phase.id}',
-                'name': phase.get_phase_type_display(),
-                'start': phase.start_date.strftime('%Y-%m-%d'),
-                'end': phase.end_date.strftime('%Y-%m-%d'),
-                'progress': 100 if phase.completed else 0,
-                'dependencies': ''
-            })
-        for milestone in project.milestones.order_by('order'):
-            tasks.append({
-                'id': f'milestone-{milestone.id}',
-                'name': milestone.name,
-                'start': milestone.due_date.strftime('%Y-%m-%d'),
-                'end': milestone.due_date.strftime('%Y-%m-%d'),
-                'progress': 100 if milestone.status == 'completed' else 0,
-                'dependencies': '',
-                'custom_class': 'milestone'
-            })
         return tasks
-
-    def _generate_gantt_chart(self, tasks):
-        """Generate Gantt chart HTML from tasks data"""
-        try:
-            # Try importing with error handling for numpy initialization
-            try:
-                import plotly.graph_objects as go
-                from plotly.offline import plot
-                import pandas as pd
-                from datetime import datetime
-            except RuntimeError as e:
-                if "CPU dispatcher tracer already initlized" in str(e):
-                    # Attempt to reload numpy if initialization error occurs
-                    import importlib
-                    import numpy
-                    importlib.reload(numpy)
-                    import plotly.graph_objects as go
-                    from plotly.offline import plot
-                    import pandas as pd
-                    from datetime import datetime
-                else:
-                    raise
-
-            # Create a DataFrame from the tasks data
-            df = pd.DataFrame(tasks)
-
-            # Convert date strings to datetime objects
-            df['start'] = pd.to_datetime(df['start'])
-            df['end'] = pd.to_datetime(df['end'])
-
-            # Calculate duration in days for each task
-            df['duration'] = (df['end'] - df['start']).dt.days
-
-            # Add text column for the labels
-            df['text'] = df.apply(lambda row: f"{row['name']} ({row['duration']} days)", axis=1)
-
-            # Add progress to custom data
-            df['progress'] = [task['progress'] for task in tasks]
-
-            # Identify phases and milestones
-            df['is_milestone'] = df['id'].str.startswith('milestone-')
-
-            # Sort everything chronologically by start date
-            df = df.sort_values("start")
-
-            # Get today's date for overdue checking
-            today = datetime.now()
-
-            # Create a figure
-            fig = go.Figure()
-
-            # Add phases as horizontal bars
-            for _, row in df[~df['is_milestone']].iterrows():
-                # Choose color based on progress and date
-                if row['progress'] == 100:
-                    color = '#22c55e'  # Green for completed
-                elif row['end'] < today and row['progress'] < 100:
-                    color = '#ef4444'  # Red for overdue
-                else:
-                    color = '#4361EE'  # Blue for in progress and not overdue
-                
-                fig.add_trace(go.Scatter(
-                    x=[row['start'], row['end']],
-                    y=[row['name'], row['name']],
-                    mode='lines',
-                    line=dict(color=color, width=20),
-                    name=row['name'],
-                    text=row['text'],
-                    hoverinfo='text',
-                hovertext=(
-                    f"<b>{row['name']}</b><br>" +
-                    f"Start: {row['start'].strftime('%b %d, %Y')}<br>" +
-                    f"End: {row['end'].strftime('%b %d, %Y')}<br>" +
-                    f"Duration: {row['duration']} days<br>" +
-                    f"Status: " + 
-                    ("Completed" if row['progress'] == 100 else
-                     f"⚠️ OVERDUE by {(today - row['end']).days} day{'s' if (today - row['end']).days != 1 else ''}" 
-                     if row['end'] < today and row['progress'] < 100 else
-                     f"{row['progress']}% Complete" + 
-                     (f" ({(row['end'] - today).days} day{'s' if (row['end'] - today).days != 1 else ''} remaining)" 
-                      if row['end'] > today else ""))
-                ),
-                    showlegend=False
-                ))
-                
-                # Calculate the midpoint timestamp properly
-                mid_timestamp = row['start'] + (row['end'] - row['start'])/2
-                
-                # Add text labels on the bars
-                fig.add_annotation(
-                    x=mid_timestamp,
-                    y=row['name'],
-                    text=row['text'],
-                    showarrow=False,
-                    font=dict(color='white', size=12, family='Arial'),
-                    xanchor="center"
-                )
-
-            # Add milestones as diamond markers
-            for _, row in df[df['is_milestone']].iterrows():
-                # Choose color based on progress and date
-                if row['progress'] == 100:
-                    color = '#22c55e'  # Green for completed
-                elif row['start'] < today and row['progress'] < 100:
-                    color = '#ef4444'  # Red for overdue
-                else:
-                    color = '#4361EE'  # Blue for in progress and not overdue
-                
-                fig.add_trace(go.Scatter(
-                    x=[row['start']],
-                    y=[row['name']],
-                    mode='markers',
-                    marker=dict(
-                        symbol='diamond',
-                        size=16,
-                        color=color,
-                        line=dict(width=2, color='white')
-                    ),
-                    name=row['name'],
-                    hoverinfo='text',
-                    hovertext=(
-                        f"<b>{row['name']}</b><br>" +
-                        f"Date: {row['start'].strftime('%b %d, %Y')}<br>" +
-                        f"Status: {row['progress']}% complete" +
-                        (f"<br>⚠️ OVERDUE" if row['start'] < today and row['progress'] < 100 else "")
-                    ),
-                    showlegend=False
-                ))
-
-            # Update the layout for a sleek, modern look
-            fig.update_layout(
-                title=dict(
-                    text="Project Timeline",
-                    font=dict(size=18, family="Arial, sans-serif", color="#333333"),
-                    x=0.5,
-                ),
-                xaxis=dict(
-                    title=None,
-                    tickformat="%b %d, %Y",
-                    gridcolor="#F5F5F5",
-                    linecolor="#E0E0E0",
-                    zeroline=False,
-                    tickfont=dict(family="Arial, sans-serif", size=11),
-                    type='date'
-                ),
-                yaxis=dict(
-                    title=None,
-                    autorange="reversed",  # This keeps the chronological order top-to-bottom
-                    showgrid=False,
-                    showline=False,
-                    zeroline=False,
-                    tickfont=dict(family="Arial, sans-serif", size=12),
-                    categoryorder='array',
-                    categoryarray=df['name'].tolist()  # This ensures the order matches our sorted dataframe
-                ),
-                plot_bgcolor='white',
-                paper_bgcolor='white',
-                height=max(400, len(df)-4 * 40),  # Dynamic height based on number of items
-                margin=dict(l=120, r=30, b=50, t=70, pad=10),
-                hoverlabel=dict(
-                    bgcolor="white",
-                    font_size=12,
-                    font_family="Arial, sans-serif"
-                ),
-                showlegend=False
-            )
-
-            # Add subtle horizontal grid lines for better readability
-            unique_names = df['name'].unique()
-            for i, name in enumerate(unique_names):
-                fig.add_shape(
-                    type="line",
-                    x0=df['start'].min(),
-                    x1=df['end'].max(),
-                    y0=name,
-                    y1=name,
-                    line=dict(color="#F5F5F5", width=1),
-                    layer="below"
-                )
-
-            # Add today marker as a shape
-            fig.add_shape(
-                type="line",
-                x0=today,
-                x1=today,
-                y0=0,
-                y1=1,
-                yref="paper",
-                line=dict(
-                    color="#FF4136",
-                    width=2,
-                    dash="dash"
-                )
-            )
-
-            # Add "Today" label
-            fig.add_annotation(
-                x=today,
-                y=1,
-                yref="paper",
-                text="Today",
-                showarrow=False,
-                font=dict(
-                    color="#FF4136",
-                    size=12
-                ),
-                xanchor="center",
-                yanchor="bottom"
-            )
-
-            # Add a color legend
-            fig.add_annotation(
-                x=1.0,
-                y=-0.12,
-                xref="paper",
-                yref="paper",
-                text="<span style='color:#22c55e;'>■</span> Completed &nbsp; <span style='color:#4361EE;'>■</span> In Progress &nbsp; <span style='color:#ef4444;'>■</span> Overdue",
-                showarrow=False,
-                font=dict(size=12, family="Arial"),
-                align="right",
-                xanchor="right",
-                yanchor="top"
-            )
-
-            # Generate the HTML
-            return plot(fig, output_type='div', include_plotlyjs='cdn', config={
-                'displayModeBar': False,
-                'responsive': True
-            })
-        except Exception as e:
-            import traceback
-            error_details = traceback.format_exc()
-            return f'<div class="alert alert-danger">Error generating Gantt chart: {str(e)}<br><pre>{error_details}</pre></div>'
-
-    
-
-    
-    # The rest of the class remains the same (post method, helper methods, etc.)
-    # ...
-    
-    def post(self, request, project_id):
-        # Verify project ownership
-        project = get_object_or_404(ResearchProject, pk=project_id)
-        
-        if 'document_submit' in request.POST:
-            form = DocumentUploadForm(request.POST, request.FILES)
-            if form.is_valid():
-                document = form.save(commit=False)
-                document.project = project
-                document.save()
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'documents': project.documents.all(),
-                        'document_form': DocumentUploadForm()
-                    }
-                    return render(request, 'research_dashboard/partials/overview_content.html', context)
-                
-                # Get current view from POST data or default to 'overview'
-                current_view = request.POST.get('current_view', 'overview')
-                if current_view == 'overview':
-                    return redirect('project_detail', project_id=project.id)
-                elif current_view == 'timeline':
-                    return redirect('project_timeline', project_id=project.id)
-                elif current_view == 'metrics':
-                    return redirect('project_metrics', project_id=project.id)
-                else:
-                    return redirect('project_detail', project_id=project.id)
-            else:
-                # Handle invalid form - get current view from POST data
-                current_view = request.POST.get('current_view', 'overview')
-                context = {
-                    'project': project,
-                    'current_view': current_view,
-                    'documents': project.documents.all(),
-                    'document_form': form,
-                    'metric_form': MetricForm(initial={'project': project}),
-                    'phases': project.phases.all(),
-                    'milestones': project.milestones.all(),
-                    'metrics': project.metrics.all()
-                }
-                
-                # Return the appropriate view based on current_view
-                if current_view == 'overview':
-                    return render(request, 'research_dashboard/partials/overview_content.html', context)
-                elif current_view == 'timeline':
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                elif current_view == 'metrics':
-                    return render(request, 'research_dashboard/partials/metrics_content.html', context)
-                else:
-                    return render(request, 'research_dashboard/partials/overview_content.html', context)
-
-        elif 'metric_submit' in request.POST:
-            form = MetricForm(request.POST)
-            if form.is_valid():
-                metric = form.save(commit=False)
-                metric.project = project
-                metric.save()
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'metrics': project.metrics.all(),
-                        'metric_form': MetricForm(initial={'project': project})
-                    }
-                    return render(request, 'research_dashboard/partials/metrics_content.html', context)
-                
-                # Get current view from POST data or default to 'overview'
-                current_view = request.POST.get('current_view', 'overview')
-                if current_view == 'overview':
-                    return redirect('project_detail', project_id=project.id)
-                elif current_view == 'timeline':
-                    return redirect('project_timeline', project_id=project.id)
-                elif current_view == 'metrics':
-                    return redirect('project_metrics', project_id=project.id)
-                else:
-                    return redirect('project_detail', project_id=project.id)
-            else:
-                # Handle invalid form - get current view from POST data
-                current_view = request.POST.get('current_view', 'overview')
-                context = {
-                    'project': project,
-                    'current_view': current_view,
-                    'documents': project.documents.all(),
-                    'document_form': DocumentUploadForm(),
-                    'metric_form': form,
-                    'phases': project.phases.all(),
-                    'milestones': project.milestones.all(),
-                    'metrics': project.metrics.all()
-                }
-                
-                # Return the appropriate view based on current_view
-                if current_view == 'overview':
-                    return render(request, 'research_dashboard/partials/overview_content.html', context)
-                elif current_view == 'timeline':
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                elif current_view == 'metrics':
-                    return render(request, 'research_dashboard/partials/metrics_content.html', context)
-                else:
-                    return render(request, 'research_dashboard/partials/overview_content.html', context)
-                
-        elif request.POST.get('_method') == 'DELETE' and request.POST.get('phase_id'):
-            try:
-                phase = EvaluationPhase.objects.get(
-                    pk=request.POST.get('phase_id'),
-                    project_id=project_id
-                )
-                phase.delete()
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all(),
-                        'milestones': project.milestones.all()
-                    }
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                messages.success(request, 'Phase deleted successfully!')
-                return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error deleting phase: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-            
-        elif 'phase_type' in request.POST:
-            try:
-                if request.POST.get('phase_id'):
-                    # Update existing phase
-                    phase = EvaluationPhase.objects.get(
-                        pk=request.POST.get('phase_id'),
-                        project_id=project_id
-                    )
-                    phase.phase_type = request.POST.get('phase_type')
-                    phase.start_date = request.POST.get('start_date')
-                    phase.end_date = request.POST.get('end_date')
-                    phase.notes = request.POST.get('notes')
-                    phase.completed = 'completed' in request.POST
-                    phase.save()
-                    # Return HTMX partial instead of redirecting
-                    if request.headers.get('HX-Request'):
-                        context = {
-                            'project': project,
-                            'phases': project.phases.all(),
-                            'milestones': project.milestones.all()
-                        }
-                        return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    messages.success(request, 'Phase updated successfully!')
-                    return redirect('project_detail', project_id=project_id)
-                else:
-                    # Create new phase
-                    phase = EvaluationPhase.objects.create(
-                        project=project,
-                        phase_type=request.POST.get('phase_type'),
-                        start_date=request.POST.get('start_date'),
-                        end_date=request.POST.get('end_date'),
-                        notes=request.POST.get('notes')
-                    )
-                    # Return HTMX partial instead of redirecting
-                    if request.headers.get('HX-Request'):
-                        context = {
-                            'project': project,
-                            'phases': project.phases.all(),
-                            'milestones': project.milestones.all()
-                        }
-                        return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    messages.success(request, 'Phase added successfully!')
-                    return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error modifying phase: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-            
-        # Milestone CRUD operations
-        elif 'add_milestone' in request.POST:
-            try:
-                milestone = ProjectMilestone.objects.create(
-                    project=project,
-                    name=request.POST.get('name'),
-                    due_date=request.POST.get('due_date'),
-                    description=request.POST.get('description')
-                )
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all(),
-                        'milestones': project.milestones.all()
-                    }
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                messages.success(request, 'Milestone added successfully!')
-                return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error adding milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-        elif 'update_milestone' in request.POST:
-            try:
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.name = request.POST.get('name')
-                # Convert string date to date object
-                due_date_str = request.POST.get('due_date')
-                milestone.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
-                milestone.description = request.POST.get('description')
-                milestone.save()
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all(),
-                        'milestones': project.milestones.all()
-                    }
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                messages.success(request, 'Milestone updated successfully!')
-                return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error updating milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-        elif request.POST.get('_method') == 'DELETE' and request.POST.get('milestone_id'):
-            try:
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.delete()
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all(),
-                        'milestones': project.milestones.all()
-                    }
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                messages.success(request, 'Milestone deleted successfully!')
-                return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error deleting milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-                
-        elif request.POST.get('_method') == 'DELETE' and request.POST.get('phase_id'):
-            try:
-                return self._handle_phase_delete(request, project_id)
-            except Exception as e:
-                messages.error(request, f'Error deleting phase: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-            
-        elif 'phase_type' in request.POST:
-            try:
-                if request.POST.get('phase_id'):
-                    return self._handle_phase_update(request, project_id)
-                else:
-                    phase = EvaluationPhase.objects.create(
-                        project=project,
-                        phase_type=request.POST.get('phase_type'),
-                        start_date=request.POST.get('start_date'),
-                        end_date=request.POST.get('end_date'),
-                        notes=request.POST.get('notes')
-                    )
-                    # Return HTMX partial instead of redirecting
-                    if request.headers.get('HX-Request'):
-                        context = {
-                            'project': project,
-                            'phases': project.phases.all(),
-                            'milestones': project.milestones.all()
-                        }
-                        return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                    messages.success(request, 'Phase added successfully!')
-                    return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error modifying phase: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-        # Milestone CRUD operations
-        elif 'add_milestone' in request.POST:
-            try:
-                milestone = ProjectMilestone.objects.create(
-                    project=project,
-                    name=request.POST.get('name'),
-                    due_date=request.POST.get('due_date'),
-                    description=request.POST.get('description')
-                )
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all(),
-                        'milestones': project.milestones.all()
-                    }
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                messages.success(request, 'Milestone added successfully!')
-                return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error adding milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-        elif 'update_milestone' in request.POST:
-            try:
-                from django.utils import timezone
-                from datetime import datetime
-                
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.name = request.POST.get('name')
-                # Convert string date to date object
-                due_date_str = request.POST.get('due_date')
-                milestone.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
-                milestone.description = request.POST.get('description')
-                milestone.save()
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all(),
-                        'milestones': project.milestones.all()
-                    }
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                messages.success(request, 'Milestone updated successfully!')
-                return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, f'Error updating milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-        elif 'toggle_milestone' in request.POST:
-            try:
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                # Toggle status
-                milestone.status = 'completed' if milestone.status != 'completed' else 'pending'
-                milestone.save()
-                
-                return JsonResponse({
-                    'success': True,
-                    'new_status': milestone.status,
-                    'status_display': milestone.get_status_display(),
-                    'button_class': 'btn-success' if milestone.status == 'completed' else 
-                                   'btn-danger' if milestone.status == 'overdue' else 'btn-info'
-                })
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-        elif request.POST.get('_method') == 'DELETE' and request.POST.get('milestone_id'):
-            try:
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.delete()
-                # Return HTMX partial instead of redirecting
-                if request.headers.get('HX-Request'):
-                    context = {
-                        'project': project,
-                        'phases': project.phases.all(),
-                        'milestones': project.milestones.all()
-                    }
-                    return render(request, 'research_dashboard/partials/timeline_content.html', context)
-                messages.success(request, 'Milestone deleted successfully!')
-                return redirect('project_detail', project_id=project_id)
-            except Exception as e:
-                messages.error(request, 'Error deleting milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-        
-        # For initial page load or non-HTMX requests, render the main project_detail.html
-        return render(request, self.template_name, context)
-    
-    # The rest of the class remains the same (post method, helper methods, etc.)
-    # ...
-
-    def post(self, request, project_id):
-        # Verify project ownership
-        project = get_object_or_404(ResearchProject, pk=project_id)
-        
-        if 'document_submit' in request.POST:
-            form = DocumentUploadForm(request.POST, request.FILES)
-            if form.is_valid():
-                document = form.save(commit=False)
-                document.project = project
-                document.save()
-                return redirect('project_detail', project_id=project.id)
-            else:
-                tasks = self._prepare_tasks_data(project)
-                tasks_json = json.dumps(tasks, ensure_ascii=False)
-                context = {
-                    'project': project,
-                    'phases': project.phases.all(),
-                    'milestones': project.milestones.all(),
-                    'metrics': project.metrics.all(),
-                    'documents': project.documents.all(),
-                    'document_form': form,
-                    'metric_form': MetricForm(initial={'project': project}),
-                    'tasks_json': tasks_json
-                }
-                return render(request, self.template_name, context)
-
-        elif 'metric_submit' in request.POST:
-            form = MetricForm(request.POST)
-            if form.is_valid():
-                metric = form.save(commit=False)
-                metric.project = project
-                metric.save()
-                return redirect('project_detail', project_id=project.id)
-                
-        elif request.POST.get('_method') == 'DELETE' and request.POST.get('phase_id'):
-            try:
-                return self._handle_phase_delete(request, project_id)
-            except Exception as e:
-                messages.error(request, f'Error deleting phase: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-        elif 'phase_type' in request.POST:
-            try:
-                if request.POST.get('phase_id'):
-                    return self._handle_phase_update(request, project_id)
-                else:
-                    EvaluationPhase.objects.create(
-                        project=project,
-                        phase_type=request.POST.get('phase_type'),
-                        start_date=request.POST.get('start_date'),
-                        end_date=request.POST.get('end_date'),
-                        notes=request.POST.get('notes')
-                    )
-                    messages.success(request, 'Phase added successfully!')
-            except Exception as e:
-                messages.error(request, f'Error modifying phase: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-        # Milestone CRUD operations
-        elif 'add_milestone' in request.POST:
-            try:
-                ProjectMilestone.objects.create(
-                    project=project,
-                    name=request.POST.get('name'),
-                    due_date=request.POST.get('due_date'),
-                    description=request.POST.get('description')
-                )
-                messages.success(request, 'Milestone added successfully!')
-            except Exception as e:
-                messages.error(request, f'Error adding milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-        elif 'update_milestone' in request.POST:
-            try:
-                from django.utils import timezone
-                from datetime import datetime
-                
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.name = request.POST.get('name')
-                # Convert string date to date object
-                due_date_str = request.POST.get('due_date')
-                milestone.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
-                milestone.description = request.POST.get('description')
-                milestone.save()
-                messages.success(request, 'Milestone updated successfully!')
-            except Exception as e:
-                messages.error(request, f'Error updating milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-        elif 'toggle_milestone' in request.POST:
-            try:
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                # Toggle status
-                milestone.status = 'completed' if milestone.status != 'completed' else 'pending'
-                milestone.save()
-                
-                return JsonResponse({
-                    'success': True,
-                    'new_status': milestone.status,
-                    'status_display': milestone.get_status_display(),
-                    'button_class': 'btn-success' if milestone.status == 'completed' else 
-                                   'btn-danger' if milestone.status == 'overdue' else 'btn-info'
-                })
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-        elif request.POST.get('_method') == 'DELETE' and request.POST.get('milestone_id'):
-            try:
-                milestone = ProjectMilestone.objects.get(
-                    pk=request.POST.get('milestone_id'),
-                    project=project
-                )
-                milestone.delete()
-                messages.success(request, 'Milestone deleted successfully!')
-            except Exception as e:
-                messages.error(request, 'Error deleting milestone: {str(e)}')
-            return redirect('project_detail', project_id=project_id)
-
-    def _handle_phase_update(self, request, project_id):
-        """Handle phase update (internal method)"""
-        phase = EvaluationPhase.objects.get(
-            pk=request.POST.get('phase_id'),
-            project_id=project_id
-        )
-        phase.phase_type = request.POST.get('phase_type')
-        phase.start_date = request.POST.get('start_date')
-        phase.end_date = request.POST.get('end_date')
-        phase.notes = request.POST.get('notes')
-        phase.completed = 'completed' in request.POST
-        phase.save()
-        messages.success(request, 'Phase updated successfully!')
-        return redirect('project_detail', project_id=project_id)
-
-    def _handle_phase_delete(self, request, project_id):
-        """Handle phase deletion (internal method)"""
-        phase = EvaluationPhase.objects.get(
-            pk=request.POST.get('phase_id'),
-            project_id=project_id
-        )
-        phase.delete()
-        messages.success(request, 'Phase deleted successfully!')
-        return redirect('project_detail', project_id=project_id)   
-        
-
-    def view_document(self, request, document_id):
-        """View a document in the browser"""
-        document = get_object_or_404(ResearchDocument, pk=document_id)
-        file_path = document.document.path
-        content_type, _ = mimetypes.guess_type(file_path)
-        
-        if content_type is None:
-            content_type = 'application/octet-stream'
-            
-        with open(file_path, 'rb') as file:
-            response = HttpResponse(file.read(), content_type=content_type)
-            response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
-            return response
-
-    def download_document(self, request, document_id):
-        """Download a document"""
-        document = get_object_or_404(ResearchDocument, pk=document_id)
-        file_path = document.document.path
-        with open(file_path, 'rb') as file:
-            response = HttpResponse(file.read(), content_type='application/force-download')
-            response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
-            return response
 
     def _generate_gantt_chart(self, tasks):
         """Generate Gantt chart HTML from tasks data"""
@@ -1418,210 +557,43 @@ class ProjectTimelineView(View):
             import plotly.graph_objects as go
             from plotly.offline import plot
             import pandas as pd
+            from datetime import datetime, timedelta
+            import plotly
+            import plotly.graph_objs as go
+            from plotly.offline import plot
+            import pandas as pd
             from datetime import datetime
+            from plotly.subplots import make_subplots
 
-            # Create a DataFrame from the tasks data
+            # Create DataFrame and process data
+            if not tasks:
+                return ""
             df = pd.DataFrame(tasks)
-
-            # Convert date strings to datetime objects
             df['start'] = pd.to_datetime(df['start'])
             df['end'] = pd.to_datetime(df['end'])
-
-            # Calculate duration in days for each task
             df['duration'] = (df['end'] - df['start']).dt.days
-
-            # Add text column for the labels
             df['text'] = df.apply(lambda row: f"{row['name']} ({row['duration']} days)", axis=1)
-
-            # Add progress to custom data
-            df['progress'] = [task['progress'] for task in tasks]
-
-            # Identify phases and milestones
             df['is_milestone'] = df['id'].str.startswith('milestone-')
-
-            # Sort everything chronologically by start date
             df = df.sort_values("start")
-
-            # Get today's date for overdue checking
             today = datetime.now()
 
-            # Create a figure
+            # Create figure
             fig = go.Figure()
 
-            # Add phases as horizontal bars
+            # Add phases as bars
             for _, row in df[~df['is_milestone']].iterrows():
-                # Choose color based on progress and date
-                if row['progress'] == 100:
-                    color = '#22c55e'  # Green for completed
-                elif row['end'] < today and row['progress'] < 100:
-                    color = '#ef4444'  # Red for overdue
-                else:
-                    color = '#4361EE'  # Blue for in progress and not overdue
-                
-                fig.add_trace(go.Scatter(
-                    x=[row['start'], row['end']],
-                    y=[row['name'], row['name']],
-                    mode='lines',
-                    line=dict(color=color, width=20),
-                    name=row['name'],
-                    text=row['text'],
-                    hoverinfo='text',
-                hovertext=(
-                    f"<b>{row['name']}</b><br>" +
-                    f"Start: {row['start'].strftime('%b %d, %Y')}<br>" +
-                    f"End: {row['end'].strftime('%b %d, %Y')}<br>" +
-                    f"Duration: {row['duration']} days<br>" +
-                    f"Status: " + 
-                    ("Completed" if row['progress'] == 100 else
-                     f"⚠️ OVERDUE by {(today - row['end']).days} day{'s' if (today - row['end']).days != 1 else ''}" 
-                     if row['end'] < today and row['progress'] < 100 else
-                     f"{row['progress']}% Complete" + 
-                     (f" ({(row['end'] - today).days} day{'s' if (row['end'] - today).days != 1 else ''} remaining)" 
-                      if row['end'] > today else ""))
-                ),
-                    showlegend=False
-                ))
-                
-                # Calculate the midpoint timestamp properly
-                mid_timestamp = row['start'] + (row['end'] - row['start'])/2
-                
-                # Add text labels on the bars
-                fig.add_annotation(
-                    x=mid_timestamp,
-                    y=row['name'],
-                    text=row['text'],
-                    showarrow=False,
-                    font=dict(color='white', size=12, family='Arial'),
-                    xanchor="center"
-                )
+                color = self._get_task_color(row, today)
+                fig.add_trace(self._create_phase_trace(row, color))
+                fig.add_annotation(self._create_phase_annotation(row))
 
-            # Add milestones as diamond markers
+            # Add milestones as markers
             for _, row in df[df['is_milestone']].iterrows():
-                # Choose color based on progress and date
-                if row['progress'] == 100:
-                    color = '#22c55e'  # Green for completed
-                elif row['start'] < today and row['progress'] < 100:
-                    color = '#ef4444'  # Red for overdue
-                else:
-                    color = '#4361EE'  # Blue for in progress and not overdue
-                
-                fig.add_trace(go.Scatter(
-                    x=[row['start']],
-                    y=[row['name']],
-                    mode='markers',
-                    marker=dict(
-                        symbol='diamond',
-                        size=16,
-                        color=color,
-                        line=dict(width=2, color='white')
-                    ),
-                    name=row['name'],
-                    hoverinfo='text',
-                    hovertext=(
-                        f"<b>{row['name']}</b><br>"
-                        f"Date: {row['start'].strftime('%b %d, %Y')}<br>"
-                        f"Status: {row['progress']}% complete" +
-                        (f"<br>⚠️ OVERDUE" if row['start'] < today and row['progress'] < 100 else "")
-                    ),
-                    showlegend=False
-                ))
+                color = self._get_task_color(row, today)
+                fig.add_trace(self._create_milestone_trace(row, color))
 
-            # Update the layout for a sleek, modern look
-            fig.update_layout(
-                title=dict(
-                    text="Project Timeline",
-                    font=dict(size=18, family="Arial, sans-serif", color="#333333"),
-                    x=0.5,
-                ),
-                xaxis=dict(
-                    title=None,
-                    tickformat="%b %d, %Y",
-                    gridcolor="#F5F5F5",
-                    linecolor="#E0E0E0",
-                    zeroline=False,
-                    tickfont=dict(family="Arial, sans-serif", size=11),
-                    type='date'
-                ),
-                yaxis=dict(
-                    title=None,
-                    autorange="reversed",  # This keeps the chronological order top-to-bottom
-                    showgrid=False,
-                    showline=False,
-                    zeroline=False,
-                    tickfont=dict(family="Arial, sans-serif", size=12),
-                    categoryorder='array',
-                    categoryarray=df['name'].tolist()  # This ensures the order matches our sorted dataframe
-                ),
-                plot_bgcolor='white',
-                paper_bgcolor='white',
-                height=max(400, len(df) * 40),  # Dynamic height based on number of items
-                margin=dict(l=120, r=30, b=50, t=70, pad=10),
-                hoverlabel=dict(
-                    bgcolor="white",
-                    font_size=12,
-                    font_family="Arial, sans-serif"
-                ),
-                showlegend=False
-            )
-
-            # Add subtle horizontal grid lines for better readability
-            unique_names = df['name'].unique()
-            for i, name in enumerate(unique_names):
-                fig.add_shape(
-                    type="line",
-                    x0=df['start'].min(),
-                    x1=df['end'].max(),
-                    y0=name,
-                    y1=name,
-                    line=dict(color="#F5F5F5", width=1),
-                    layer="below"
-                )
-
-            # Add today marker as a shape
-            fig.add_shape(
-                type="line",
-                x0=today,
-                x1=today,
-                y0=0,
-                y1=1,
-                yref="paper",
-                line=dict(
-                    color="#FF4136",
-                    width=2,
-                    dash="dash"
-                )
-            )
-
-            # Add "Today" label
-            fig.add_annotation(
-                x=today,
-                y=1,
-                yref="paper",
-                text="Today",
-                showarrow=False,
-                font=dict(
-                    color="#FF4136",
-                    size=12
-                ),
-                xanchor="center",
-                yanchor="bottom"
-            )
-
-            # Add a color legend
-            fig.add_annotation(
-                x=1.0,
-                y=-0.12,
-                xref="paper",
-                yref="paper",
-                text="<span style='color:#22c55e;'>■</span> Completed &nbsp; <span style='color:#4361EE;'>■</span> In Progress &nbsp; <span style='color:#ef4444;'>■</span> Overdue",
-                showarrow=False,
-                font=dict(size=12, family="Arial"),
-                align="right",
-                xanchor="right",
-                yanchor="top"
-            )
-
-            # Generate the HTML
+            # Configure layout
+            self._configure_layout(fig, df, today)
+            
             return plot(fig, output_type='div', include_plotlyjs='cdn', config={
                 'displayModeBar': False,
                 'responsive': True
@@ -1631,31 +603,163 @@ class ProjectTimelineView(View):
             error_details = traceback.format_exc()
             return f'<div class="alert alert-danger">Error generating Gantt chart: {str(e)}<br><pre>{error_details}</pre></div>'
 
-    def _prepare_tasks_data(self, project):
-        """Prepare tasks data for Gantt chart visualization"""
-        tasks = []
-        for phase in project.phases.all():
-            tasks.append({
-                'id': f'phase-{phase.id}',
-                'name': phase.get_phase_type_display(),
-                'start': phase.start_date.strftime('%Y-%m-%d'),
-                'end': phase.end_date.strftime('%Y-%m-%d'),
-                'progress': 100 if phase.completed else 0,
-                'dependencies': ''
-            })
-        for milestone in project.milestones.all():
-            tasks.append({
-                'id': f'milestone-{milestone.id}',
-                'name': milestone.name,
-                'start': milestone.due_date.strftime('%Y-%m-%d'),
-                'end': milestone.due_date.strftime('%Y-%m-%d'),
-                'progress': 100 if milestone.status == 'completed' else 0,
-                'dependencies': '',
-                'custom_class': 'milestone'
-            })
-        return tasks
+    def _get_task_color(self, row, today):
+        """Determine color based on task status and dates"""
+        if row['progress'] == 100:
+            return '#22c55e'  # Green for completed
+        elif row['end'].to_pydatetime() < today and row['progress'] < 100:
+            return '#ef4444'  # Red for overdue
+        return '#4361EE'  # Blue for in progress
 
-# New views for the added pages
+    def _create_phase_trace(self, row, color):
+        """Create trace for a phase"""
+        return go.Scatter(
+            x=[row['start'], row['end']],
+            y=[row['name'], row['name']],
+            mode='lines',
+            line=dict(color=color, width=20),
+            name=row['name'],
+            text=row['text'],
+            hoverinfo='text',
+            hovertext=self._get_hover_text(row),
+            showlegend=False
+        )
+
+    def _create_phase_annotation(self, row):
+        """Create annotation for a phase"""
+        mid_timestamp = row['start'] + (row['end'] - row['start'])/2
+        return dict(
+            x=mid_timestamp,
+            y=row['name'],
+            text=row['text'],
+            showarrow=False,
+            font=dict(color='white', size=12, family='Arial'),
+            xanchor="center"
+        )
+
+    def _create_milestone_trace(self, row, color):
+        """Create trace for a milestone"""
+        return go.Scatter(
+            x=[row['start']],
+            y=[row['name']],
+            mode='markers',
+            marker=dict(
+                symbol='diamond',
+                size=16,
+                color=color,
+                line=dict(width=2, color='white')
+            ),
+            name=row['name'],
+            hoverinfo='text',
+            hovertext=self._get_hover_text(row),
+            showlegend=False
+        )
+
+    def _get_hover_text(self, row):
+        """Generate hover text for tasks"""
+        if 'milestone' in row and row['milestone']:
+            return (
+                f"<b>{row['name']}</b><br>"
+                f"Date: {row['start'].strftime('%b %d, %Y')}<br>"
+                f"Status: {row['progress']}% complete"
+            )
+        else:
+            return (
+                f"<b>{row['name']}</b><br>"
+                f"Start: {row['start'].strftime('%b %d, %Y')}<br>"
+                f"End: {row['end'].strftime('%b %d, %Y')}<br>"
+                f"Duration: {row['duration']} days<br>"
+                f"Status: {row['progress']}% complete"
+            )
+
+    def _configure_layout(self, fig, df, today):
+        """Configure the figure layout"""
+        fig.update_layout(
+            title=dict(
+                text="Project Timeline",
+                font=dict(size=18, family="Arial, sans-serif", color="#333333"),
+                x=0.5,
+            ),
+            xaxis=dict(
+                title=None,
+                tickformat="%b %d, %Y",
+                gridcolor="#F5F5F5",
+                linecolor="#E0E0E0",
+                zeroline=False,
+                tickfont=dict(family="Arial, sans-serif", size=11),
+                type='date'
+            ),
+            yaxis=dict(
+                title=None,
+                autorange="reversed",
+                showgrid=False,
+                showline=False,
+                zeroline=False,
+                tickfont=dict(family="Arial, sans-serif", size=12),
+                categoryorder='array',
+                categoryarray=df['name'].tolist()
+            ),
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            height=max(400, len(df) * 40),
+            margin=dict(l=120, r=30, b=50, t=70, pad=10),
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=12,
+                font_family="Arial, sans-serif"
+            ),
+            showlegend=False
+        )
+
+        # Add grid lines
+        for name in df['name'].unique():
+            fig.add_shape(
+                type="line",
+                x0=df['start'].min(),
+                x1=df['end'].max(),
+                y0=name,
+                y1=name,
+                line=dict(color="#F5F5F5", width=1),
+                layer="below"
+            )
+
+        # Add today marker
+        fig.add_shape(
+            type="line",
+            x0=today,
+            x1=today,
+            y0=0,
+            y1=1,
+            yref="paper",
+            line=dict(color="#FF4136", width=2, dash="dash")
+        )
+
+        # Add today label
+        fig.add_annotation(
+            x=today,
+            y=1,
+            yref="paper",
+            text="Today",
+            showarrow=False,
+            font=dict(color="#FF4136", size=12),
+            xanchor="center",
+            yanchor="bottom"
+        )
+
+        # Add color legend
+        fig.add_annotation(
+            x=1.0,
+            y=-0.12,
+            xref="paper",
+            yref="paper",
+            text="<span style='color:#22c55e;'>■</span> Completed   <span style='color:#4361EE;'>■</span> In Progress   <span style='color:#ef4444;'>■</span> Overdue",
+            showarrow=False,
+            font=dict(size=12, family="Arial"),
+            align="right",
+            xanchor="right",
+            yanchor="top"
+        )
+
 class ProjectHIVServicesView(View):
     template_name = 'research_dashboard/project_detail.html'
     
@@ -1670,8 +774,8 @@ class ProjectHIVServicesView(View):
             'project': project,
             'current_view': 'hiv_services',
         }
-        if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/metrics_content.html', context)
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render(request, 'research_dashboard/partials/hiv_services_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectNCDServicesView(View):
@@ -1688,8 +792,8 @@ class ProjectNCDServicesView(View):
             'project': project,
             'current_view': 'ncd_services',
         }
-        if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/metrics_content.html', context)
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render(request, 'research_dashboard/partials/ncd_services_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectIntegrationView(View):
@@ -1706,8 +810,8 @@ class ProjectIntegrationView(View):
             'project': project,
             'current_view': 'integration',
         }
-        if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/metrics_content.html', context)
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render(request, 'research_dashboard/partials/integration_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectStockSupplyView(View):
@@ -1724,8 +828,8 @@ class ProjectStockSupplyView(View):
             'project': project,
             'current_view': 'stock_supply',
         }
-        if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/metrics_content.html', context)
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render(request, 'research_dashboard/partials/stock_supply_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectReferralLinkageView(View):
@@ -1742,8 +846,8 @@ class ProjectReferralLinkageView(View):
             'project': project,
             'current_view': 'referral_linkage',
         }
-        if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/metrics_content.html', context)
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render(request, 'research_dashboard/partials/referral_linkage_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectDataQualityView(View):
@@ -1760,8 +864,8 @@ class ProjectDataQualityView(View):
             'project': project,
             'current_view': 'data_quality',
         }
-        if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/metrics_content.html', context)
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render(request, 'research_dashboard/partials/data_quality_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectDisaggregationView(View):
@@ -1778,27 +882,14 @@ class ProjectDisaggregationView(View):
             'project': project,
             'current_view': 'disaggregation',
         }
-        if request.headers.get('HX-Request'):
-            return render(request, 'research_dashboard/partials/metrics_content.html', context)
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render(request, 'research_dashboard/partials/disaggregation_content.html', context)
         return render(request, self.template_name, context)
 
-
-# research_dashboard/views.py
-
 import geopandas as gpd
-from django.http import JsonResponse
 from django.conf import settings
 import os
 import json
-
-# Define the path to your specific shapefile inside your app's directory
-# <<< CHANGED: Updated app name and shapefile name
-SHAPEFILE_PATH = os.path.join(settings.BASE_DIR, 'research_dashboard', 'data', 'ken_admbnda_adm1_iebc_20191031.shp')
-
-# Use a simple caching mechanism to avoid reading the file on every request
-county_gdf = None
-
-# research_dashboard/views.py
 
 def get_county_geodata():
     """Loads, processes, filters, and caches the GeoDataFrame."""
@@ -1807,52 +898,42 @@ def get_county_geodata():
         return county_gdf
 
     try:
-        print(f"Loading and preparing county shapefile from: {SHAPEFILE_PATH}")
-        gdf = gpd.read_file(SHAPEFILE_PATH)
+        gdf = gpd.read_file(os.path.join(settings.BASE_DIR, 'research_dashboard', 'data', 'ken_admbnda_adm1_iebc_20191031.shp'))
         
-        # --- Step 1: Filter for your specific study area ---
+        # Filter for specific counties
         target_counties = ["Nairobi", "Kiambu", "Kitui"]
         gdf = gdf[gdf['ADM1_EN'].isin(target_counties)].copy()
         
-        if gdf.empty:
-            print(f"WARNING: None of the target counties {target_counties} were found.")
-        else:
-            print(f"Successfully filtered for {len(gdf)} counties: {list(gdf['ADM1_EN'])}")
-
-        # --- Step 2: Reproject to WGS 84 (EPSG:4326) ---
+        # Reproject to WGS 84 (EPSG:4326)
         if gdf.crs.to_epsg() != 4326:
             gdf = gdf.to_crs(epsg=4326)
             
-        # --- Step 3: Standardize the county name column ---
+        # Standardize the county name column
         gdf.rename(columns={'ADM1_EN': 'name'}, inplace=True)
         
-        # <<< SOLUTION >>>
-        # --- Step 4: Select ONLY the columns needed for the map ---
-        # This removes all other columns, including the problematic date columns,
-        # and makes the final GeoJSON much smaller and faster.
+        # Select only needed columns
         gdf = gdf[['name', 'geometry']]
         
         county_gdf = gdf
         return county_gdf
         
     except Exception as e:
-        print(f"CRITICAL ERROR: Could not load or process shapefile. Details: {e}")
+        print(f"Error loading county data: {str(e)}")
         return gpd.GeoDataFrame([], columns=['name', 'geometry'])
 
-# ... (The rest of your views.py, including the county_boundaries_api function, can remain exactly the same) ...
-
-# Pre-load the data when the Django server starts
+# Initialize county data cache
+county_gdf = None
 get_county_geodata()
 
 def county_boundaries_api(request):
-    """API endpoint that returns the filtered county boundaries as GeoJSON."""
+    """API endpoint that returns county boundaries as GeoJSON."""
     gdf = get_county_geodata()
     
     if gdf.empty:
-        return JsonResponse({"error": "County boundary data could not be loaded or is empty after filtering."}, status=500)
+        return JsonResponse({"error": "County boundary data could not be loaded"}, status=500)
 
-    # Convert the GeoDataFrame to a GeoJSON string, then load it as a Python dict
-    # This is the most reliable way to ensure a valid JSON response in Django.
+    # Convert to GeoJSON
     geojson_data = json.loads(gdf.to_json())
-
     return JsonResponse(geojson_data)
+
+# [Rest of the file remains unchanged...]
