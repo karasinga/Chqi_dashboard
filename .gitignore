@@ -339,3 +339,4 @@ tasks/
 .windsurfrules
 
 *.md
+*.pem

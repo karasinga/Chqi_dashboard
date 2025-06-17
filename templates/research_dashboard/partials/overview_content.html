@@ -151,20 +151,15 @@
   </div>
 </div>
 
-
-
-
-
 <!-- ===================================================================
-     LEAFLET SCRIPT (UPDATED FOR DYNAMIC DATA)
+     LEAFLET SCRIPT (UPDATED FOR DYNAMIC DATA AND SEARCH)
 ==================================================================== -->
 <!-- At the end of your body, before closing </body> tag -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
   crossorigin=""></script>
 
-<!-- Style for the Layer Control (no changes needed here) -->
-<!-- Improved CSS for the interactive legend -->
+<!-- Style for the Layer Control & Legend -->
 <style>
   /* Base style for all legend items */
   .legend-item {
@@ -176,37 +171,31 @@
     font-weight: 500;
   }
   
-  /* Add a subtle "lift" on hover for better feedback */
   .legend-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.08);
   }
   
-  /* Styles for INACTIVE legend items */
   .legend-item:not(.active) {
-    background-color: #f8f9fa; /* Light gray background */
-    border-color: #dee2e6;     /* Standard light border */
-    color: #6c757d;           /* Muted text color */
+    background-color: #f8f9fa; 
+    border-color: #dee2e6;     
+    color: #6c757d;           
   }
 
-  /* Make the color dot inside INACTIVE items faded */
   .legend-item:not(.active) .d-inline-block {
     opacity: 0.4;
   }
 
-  /* Styles for ACTIVE legend items */
   .legend-item.active {
     background-color: #fff;
     opacity: 1;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
   
-  /* Make the color dot inside ACTIVE items fully visible */
   .legend-item.active .d-inline-block {
     opacity: 1;
   }
 
-  /* Apply specific colors for BORDER and TEXT on ACTIVE items */
   .legend-item[data-status="meeting_targets"].active {
     border-color: #198754;
     color: #0f5132;
@@ -220,16 +209,18 @@
     color: #842029;
   }
 
-  /* A more styled approach for the section */
-
 .map-section {
-  background-color: #ffffff; /* White background */
+  background-color: #ffffff;
   padding: 1.5rem;
-  border-radius: 0.5rem; /* Matches card radius */
-  margin-bottom: 1.5rem; /* Space below the section */
+  border-radius: 0.5rem; 
+  margin-bottom: 1.5rem; 
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
   border: 1px solid #e2e8f0;
 }
+  /* Style for search result marker icon (optional, using MDI directly in JS for now) */
+  .search-result-marker i {
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
 </style>
 
 
@@ -241,24 +232,20 @@
   async function initializeOverviewMap() {
     const mapContainer = document.getElementById('study-area-map');
 
-    // --- GUARD CLAUSE ---
     if (!mapContainer || mapContainer._leaflet_id) {
       return; 
     }
 
-    // ===================================================================
-    // STEP 1: FETCH LIVE GEOJSON DATA & PREPARE DUMMY DATA
-    // ===================================================================
-
-    // --- Fetch live county boundaries from the Django API ---
     let countyBoundariesGeoJSON;
-    let countyBounds = {}; // Will store { "CountyName": L.latLngBounds, ... }
+    let countyBounds = {}; 
 
     try {
-        // Show a loading spinner while we fetch data
         mapContainer.innerHTML = `<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading map...</span></div></div>`;
         
-        const response = await fetch("{% url 'api_county_boundaries' %}");
+        // Ensure you replace "{% url 'api_county_boundaries' %}" with the actual URL if not in a Django template
+        // For standalone testing, you might use a placeholder like:
+        // const response = await fetch("/static/data/dummy_counties.geojson"); // or a live URL
+        const response = await fetch("{% url 'api_county_boundaries' %}"); 
         if (!response.ok) {
             throw new Error(`API request failed with status: ${response.status}`);
         }
@@ -268,68 +255,51 @@
         }
     } catch (error) {
         console.error("Failed to fetch or process county boundaries:", error);
-        mapContainer.innerHTML = `<div class="alert alert-danger m-3"><strong>Error:</strong> Could not load map boundaries. Please check the server logs and API endpoint.</div>`;
-        return; // Stop execution if data fails to load
+        mapContainer.innerHTML = `<div class="alert alert-danger m-3"><strong>Error:</strong> Could not load map boundaries. ${error.message}</div>`;
+        return; 
     }
     
-    // --- Facility data (still using a dummy variable for now) ---
+    // Facility data
     const dummyFacilitiesGeoJSON = { "type": "FeatureCollection", "features": [ { "type": "Feature", "properties": { "name": "Kenyatta National Hospital", "county": "Nairobi", "lead": "Dr. A. Njoroge", "kpi_value": 72, "status": "underperforming" }, "geometry": { "type": "Point", "coordinates": [36.806, -1.301] } }, { "type": "Feature", "properties": { "name": "Kiambu Level 5 Hospital", "county": "Kiambu", "lead": "Dr. B. Wanjiku", "kpi_value": 96, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [36.837, -1.171] } }, { "type": "Feature", "properties": { "name": "Kitui County Referral Hospital", "county": "Kitui", "lead": "Dr. C. Mutisya", "kpi_value": 88, "status": "at_risk" }, "geometry": { "type": "Point", "coordinates": [38.016, -1.366] } }, { "type": "Feature", "properties": { "name": "Thika Level 5 Hospital", "county": "Kiambu", "lead": "Dr. D. Kamau", "kpi_value": 99, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [37.083, -1.047] } } ] };
 
-    // ===================================================================
-    // STEP 2: DEFINE BASE MAPS
-    // ===================================================================
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' });
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri' });
     const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: 'Map data: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: © <a href="https://opentopomap.org">OpenTopoMap</a>' });
     const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>' });
     const baseMaps = { "Streets": osmLayer, "Satellite": satelliteLayer, "Topographic": topoLayer, "Light": lightLayer };
 
-    // ===================================================================
-    // STEP 3: INITIALIZE MAP & DYNAMIC LAYERS
-    // ===================================================================
-    mapContainer.innerHTML = ''; // Clear the loading spinner
+    mapContainer.innerHTML = ''; 
     const map = L.map(mapContainer, {
-        layers: [lightLayer] // Start with the light theme
+        layers: [lightLayer] 
     });
     
-    // Create a FeatureGroup to hold all data layers for calculating the full extent.
     const allDataLayers = L.featureGroup();
     
-    // <<< UPDATED SECTION FOR DYNAMIC POLYGON COLORS >>>
-    // Define a color mapping for each county
     const countyColors = {
-        "Nairobi": "#d9534f", // A distinct red
-        "Kiambu":  "#5cb85c", // A nice green
-        "Kitui":   "#eabaaf", // An orange/yellow
-        "default": "#777777"  // A fallback gray for any other counties
+        "Nairobi": "#d9534f", 
+        "Kiambu":  "#5cb85c", 
+        "Kitui":   "#eabaaf", 
+        "default": "#777777"  
     };
 
-    // --- County Boundaries Layer (from fetched data) ---
     const countyLayer = L.geoJSON(countyBoundariesGeoJSON, {
-        // Use a function for the style to apply colors dynamically
         style: function(feature) {
-            const countyName = feature.properties.name;
+            const countyName = feature.properties.name || feature.properties.COUNTY_NAM; // Adjust if property name differs
             const fillColor = countyColors[countyName] || countyColors['default'];
-            
-            return {
-                fillColor: fillColor,
-                fillOpacity: 0.05, // Increased opacity to make colors visible
-                color: "#333",   // A dark, consistent border for all polygons
-                weight: 2,
-                dashArray: '4'
-            };
+            return { fillColor: fillColor, fillOpacity: 0.05, color: "#333", weight: 2, dashArray: '4' };
         },
         onEachFeature: function(feature, layer) {
-            if (feature.properties && feature.properties.name) {
-                layer.bindTooltip(feature.properties.name, { sticky: true });
-                countyBounds[feature.properties.name] = layer.getBounds();
+            const countyName = feature.properties.name || feature.properties.COUNTY_NAM; // Adjust
+            if (countyName) {
+                layer.bindTooltip(countyName, { sticky: true });
+                countyBounds[countyName] = layer.getBounds();
             }
         }
     }).addTo(map);
+    allDataLayers.addLayer(countyLayer); // Add counties to the group for initial bounds calculation
 
-    // --- Facility Point Layers ---
-    function getStatusColor(status) { switch (status) { case 'meeting_targets': return '#198754'; case 'at_risk': return '#ffc107'; case 'underperforming': return '#dc3545'; default: '#6c757d'; } }
-    function pointToLayer(feature, latlng) { return L.circleMarker(latlng, { radius: 8, fillColor: getStatusColor(feature.properties.status), color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 }); }
+    function getStatusColor(status) { switch (status) { case 'meeting_targets': return '#198754'; case 'at_risk': return '#ffc107'; case 'underperforming': return '#dc3545'; default: return '#6c757d'; } } // Added default return
+    function pointToLayer(feature, latlng) { return L.circleMarker(latlng, { radius: 4, fillColor: getStatusColor(feature.properties.status), color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 }); }
     function onEachFeature(feature, layer) { if (feature.properties) { const popupContent = `<h6 class="mb-1">${feature.properties.name}</h6><p class="text-muted mb-1 small">${feature.properties.county} County</p><hr class="my-1"><strong>Lead:</strong> ${feature.properties.lead}<br><strong>Performance:</strong> ${feature.properties.kpi_value}%`; layer.bindPopup(popupContent); layer.on('mouseover', function (e) { this.openPopup(); }); layer.on('mouseout', function (e) { this.closePopup(); }); } }
 
     const facilityStatusLayers = {
@@ -339,17 +309,20 @@
     };
     Object.values(facilityStatusLayers).forEach(layer => {
         layer.addTo(map);
-        allDataLayers.addLayer(layer); // BEST PRACTICE: Add facilities to full extent group
+        allDataLayers.addLayer(layer); 
     });
 
-    // "ZOOM TO FULL EXTENT" LOGIC
-    const initialBounds = allDataLayers.getBounds().pad(0.1);
-    map.fitBounds(initialBounds);
+    let initialBounds;
+    if (allDataLayers.getLayers().length > 0) {
+        initialBounds = allDataLayers.getBounds().pad(0.1);
+        map.fitBounds(initialBounds);
+    } else {
+        // Fallback if no data layers (e.g., if API fails and dummy data isn't loaded)
+        map.setView([-1.286389, 36.817223], 7); // Default to Nairobi
+        initialBounds = map.getBounds(); // Use current view as initialBounds
+        console.warn("No data layers added to map, using default view. Initial bounds might not be optimal.");
+    }
     
-
-    // ===================================================================
-    // STEP 4: ADD CONTROLS AND SET UP INTERACTIVITY
-    // ===================================================================
     const overlayMaps = {
       '<i class="mdi mdi-vector-square me-1"></i> County Boundaries': countyLayer,
       '<span class="d-inline-block me-1" style="width:10px;height:10px;background-color:#198754;border-radius:50%;"></span> Meeting Targets': facilityStatusLayers.meeting_targets,
@@ -358,7 +331,6 @@
     };
     L.control.layers(baseMaps, overlayMaps, { collapsed: true }).addTo(map);
 
-    // --- Interactive Legend ---
     const legendItems = document.querySelectorAll('.legend-item');
     legendItems.forEach(item => {
         item.addEventListener('click', (event) => {
@@ -369,10 +341,9 @@
         });
     });
 
-    // --- Dynamic County Filter ---
     const countyFilter = document.getElementById('county-filter');
-    countyFilter.innerHTML = '<option value="all" selected>All Counties</option>'; // Reset dropdown
-    const counties = Object.keys(countyBounds).sort(); // Get counties from fetched data
+    countyFilter.innerHTML = '<option value="all" selected>All Counties</option>'; 
+    const counties = Object.keys(countyBounds).sort(); 
     counties.forEach(county => {
         const option = document.createElement('option');
         option.value = county;
@@ -382,22 +353,69 @@
     countyFilter.addEventListener('change', (e) => {
         const selectedCounty = e.target.value;
         if (selectedCounty === 'all') {
-            map.flyToBounds(initialBounds);
+            if (initialBounds) map.flyToBounds(initialBounds);
         } else if (countyBounds[selectedCounty]) {
             map.flyToBounds(countyBounds[selectedCounty]);
         }
     });
     
-    // --- Search, Reset, and Fullscreen Buttons ---
     const searchBox = document.getElementById('map-search-box');
     const resetButton = document.getElementById('reset-map-view-btn');
     const fullscreenButton = document.getElementById('fullscreen-map-btn');
-    let searchMarker = null;
+    let searchMarker = null; // Marker for the search result
 
-    searchBox.addEventListener('input', (e) => { /* Search logic remains the same, using dummy data */ });
+    // --- UPDATED SEARCH LOGIC ---
+    searchBox.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.trim().toLowerCase();
+
+        if (searchMarker) {
+            map.removeLayer(searchMarker);
+            searchMarker = null;
+            map.closePopup(); // Close any popup associated with the old search marker
+        }
+
+        if (searchTerm === '') {
+            if (initialBounds) map.flyToBounds(initialBounds); // Reset to initial view when search is cleared
+            return;
+        }
+
+        const facilities = dummyFacilitiesGeoJSON.features;
+        const matchedFacilities = facilities.filter(feature =>
+            feature.properties.name.toLowerCase().includes(searchTerm)
+        );
+
+        if (matchedFacilities.length === 1) {
+            const facility = matchedFacilities[0];
+            const coordinates = facility.geometry.coordinates; // [lng, lat]
+            const latLng = L.latLng(coordinates[1], coordinates[0]); // Leaflet needs [lat, lng]
+
+            searchMarker = L.marker(latLng, {
+                icon: L.divIcon({
+                    className: 'search-result-marker', 
+                    html: '<i class="mdi mdi-star-circle" style="font-size: 28px; color: #007bff;"></i>', // Example: Blue star
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 28] 
+                })
+            }).addTo(map);
+
+            map.flyTo(latLng, 15); // Zoom level 15, adjust as needed
+            
+            const popupContent = `<h6 class="mb-1">${facility.properties.name}</h6><p class="text-muted mb-1 small">${facility.properties.county} County</p><hr class="my-1"><strong>Lead:</strong> ${facility.properties.lead}<br><strong>Performance:</strong> ${facility.properties.kpi_value}%`;
+            searchMarker.bindPopup(popupContent).openPopup();
+
+        } else if (matchedFacilities.length > 1) {
+            console.log(`${matchedFacilities.length} facilities found matching "${searchTerm}".`);
+            // Optionally, you could zoom to fit all matched facilities:
+            // const group = L.featureGroup();
+            // matchedFacilities.forEach(f => group.addLayer(L.marker([f.geometry.coordinates[1], f.geometry.coordinates[0]])));
+            // if (group.getLayers().length > 0) map.flyToBounds(group.getBounds().pad(0.2));
+        } else {
+            console.log(`No facilities found matching "${searchTerm}".`);
+        }
+    });
     
     resetButton.addEventListener('click', () => {
-        map.flyToBounds(initialBounds); // Use dynamic initial bounds
+        if (initialBounds) map.flyToBounds(initialBounds);
         map.closePopup();
         if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
         searchBox.value = '';
@@ -410,21 +428,36 @@
         });
     });
 
-    fullscreenButton.addEventListener('click', () => mapContainer.requestFullscreen().catch(err => alert(`Fullscreen error: ${err.message}`)));
+    fullscreenButton.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            mapContainer.requestFullscreen().catch(err => console.error(`Fullscreen error: ${err.message}`, err));
+        } else {
+            document.exitFullscreen();
+        }
+    });
     document.addEventListener('fullscreenchange', () => {
         const icon = document.fullscreenElement ? 'mdi-fullscreen-exit' : 'mdi-fullscreen';
         fullscreenButton.querySelector('i').className = `mdi ${icon}`;
-        setTimeout(() => map.invalidateSize(), 200);
+        setTimeout(() => map.invalidateSize(), 200); // Give a moment for resize
     });
 
-    // Finally, ensure the map renders correctly
     setTimeout(() => map.invalidateSize(), 10);
   }
 
-  // --- TRIGGER THE INITIALIZATION ---
   initializeOverviewMap();
   document.body.addEventListener('htmx:afterSwap', function(event) {
-    if (event.detail.target.querySelector('#study-area-map')) {
+    // Check if the swapped content contains our map container
+    if (event.detail.target.querySelector('#study-area-map') || event.detail.target.id === 'study-area-map') {
+        const mapContainer = document.getElementById('study-area-map');
+        // If map already initialized by Leaflet, remove it to reinitialize
+        if (mapContainer && mapContainer._leaflet_id) {
+            // A bit of a hack: Leaflet doesn't have a clean 'destroy' for all scenarios.
+            // Best is to remove the container or its _leaflet_id and re-add.
+            // For simplicity here, we'll try to re-initialize if it looks uninitialized.
+            // A more robust solution might involve map.remove() if map instance is stored globally.
+            // For now, the guard clause `!mapContainer._leaflet_id` should prevent re-init if already done.
+            // If HTMX replaces the *entire* map container, then _leaflet_id will be gone.
+        }
         initializeOverviewMap();
     }
   });
