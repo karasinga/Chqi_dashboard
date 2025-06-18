@@ -444,6 +444,10 @@
     setTimeout(() => map.invalidateSize(), 10);
   }
 
+  // initializeOverviewMap();
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeOverviewMap();
+  });
   initializeOverviewMap();
   document.body.addEventListener('htmx:afterSwap', function(event) {
     // Check if the swapped content contains our map container
