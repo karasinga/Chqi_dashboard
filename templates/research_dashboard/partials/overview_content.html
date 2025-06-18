@@ -440,8 +440,12 @@
         fullscreenButton.querySelector('i').className = `mdi ${icon}`;
         setTimeout(() => map.invalidateSize(), 200); // Give a moment for resize
     });
-
-    setTimeout(() => map.invalidateSize(), 10);
+    // =================================================================
+    // THE FIX: Add this line right at the end of the function.
+    // This tells the map to re-check its size after a brief delay,
+    // ensuring the browser has finished rendering the container.
+    // =================================================================
+    setTimeout(() => map.invalidateSize(), 200);
   }
 
   // initializeOverviewMap();
