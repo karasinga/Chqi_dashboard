@@ -441,11 +441,14 @@
         setTimeout(() => map.invalidateSize(), 200); // Give a moment for resize
     });
     // =================================================================
-    // THE FIX: Add this line right at the end of the function.
-    // This tells the map to re-check its size after a brief delay,
-    // ensuring the browser has finished rendering the container.
+    // THE ROBUST FIX:
+    // This waits for the browser's next repaint cycle before resizing the map.
+    // It's the most reliable way to ensure the container's CSS has been applied,
+    // solving the cold-load vs. warm-load problem.
     // =================================================================
-    setTimeout(() => map.invalidateSize(), 200);
+    requestAnimationFrame(function() {
+      map.invalidateSize();
+    });
   }
 
   // initializeOverviewMap();
