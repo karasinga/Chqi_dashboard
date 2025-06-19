@@ -231,9 +231,15 @@
    */
   async function initializeOverviewMap() {
     const mapContainer = document.getElementById('study-area-map');
-
     if (!mapContainer || mapContainer._leaflet_id) {
-      return; 
+      console.warn('Map container not found or already initialized');
+      return;
+    }
+
+    // Ensure container is visible and has dimensions
+    if (mapContainer.offsetWidth === 0 || mapContainer.offsetHeight === 0) {
+      console.warn('Map container has no visible dimensions');
+      return;
     }
 
     let countyBoundariesGeoJSON;
@@ -446,30 +452,13 @@
     // It's the most reliable way to ensure the container's CSS has been applied,
     // solving the cold-load vs. warm-load problem.
     // =================================================================
-    requestAnimationFrame(function() {
+    requestAnimationFrame(() => {
       map.invalidateSize();
     });
   }
 
-  // initializeOverviewMap();
-  document.addEventListener('DOMContentLoaded', function() {
+  // Simplified Map Initialization
+  document.addEventListener('DOMContentLoaded', () => {
     initializeOverviewMap();
-  });
-  initializeOverviewMap();
-  document.body.addEventListener('htmx:afterSwap', function(event) {
-    // Check if the swapped content contains our map container
-    if (event.detail.target.querySelector('#study-area-map') || event.detail.target.id === 'study-area-map') {
-        const mapContainer = document.getElementById('study-area-map');
-        // If map already initialized by Leaflet, remove it to reinitialize
-        if (mapContainer && mapContainer._leaflet_id) {
-            // A bit of a hack: Leaflet doesn't have a clean 'destroy' for all scenarios.
-            // Best is to remove the container or its _leaflet_id and re-add.
-            // For simplicity here, we'll try to re-initialize if it looks uninitialized.
-            // A more robust solution might involve map.remove() if map instance is stored globally.
-            // For now, the guard clause `!mapContainer._leaflet_id` should prevent re-init if already done.
-            // If HTMX replaces the *entire* map container, then _leaflet_id will be gone.
-        }
-        initializeOverviewMap();
-    }
   });
 </script>
