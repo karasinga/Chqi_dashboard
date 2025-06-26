@@ -3,9 +3,9 @@ from .views import DashboardView, ProjectOverviewView, ProjectTimelineView
 from .views import AboutView, LandingPageView, EvaluatorListView, EvaluatorUpdateView
 from .views import EvaluatorDeleteView, EvaluationView, EvaluationDetailView, EvaluationUpdateView
 from .views import update_phase_status, update_milestone_status, update_timeline_order
-from .views import ProjectHIVServicesView, ProjectNCDServicesView, ProjectIntegrationView
-from .views import ProjectStockSupplyView, ProjectReferralLinkageView, ProjectDataQualityView
-from .views import ProjectDisaggregationView,county_boundaries_api
+from .views import ProjectServiceDeliveryView, ProjectEssentialMedicinesView, ProjectHealthWorkforceView
+from .views import ProjectHealthInfoSystemsView, ProjectHealthFinancingView, ProjectDataQualityView
+from .views import ProjectLeadershipGovernanceView, county_boundaries_api
 from django.contrib.auth.views import LogoutView  # Add logout view
 
 urlpatterns = [
@@ -18,13 +18,13 @@ urlpatterns = [
     path('update_phase_status/<int:phase_id>/', update_phase_status, name='update_phase_status'),
     path('update_milestone_status/<int:milestone_id>/', update_milestone_status, name='update_milestone_status'),
     path('update_timeline_order/', update_timeline_order, name='update_timeline_order'),
-    path('project/<int:project_id>/hiv_services/', ProjectHIVServicesView.as_view(), name='project_hiv_services'),
-    path('project/<int:project_id>/ncd_services/', ProjectNCDServicesView.as_view(), name='project_ncd_services'),
-    path('project/<int:project_id>/integration/', ProjectIntegrationView.as_view(), name='project_integration'),
-    path('project/<int:project_id>/stock_supply/', ProjectStockSupplyView.as_view(), name='project_stock_supply'),
-    path('project/<int:project_id>/referral_linkage/', ProjectReferralLinkageView.as_view(), name='project_referral_linkage'),
+    path('project/<int:project_id>/service_delivery/', ProjectServiceDeliveryView.as_view(), name='project_service_delivery'),
+    path('project/<int:project_id>/essential_medicines/', ProjectEssentialMedicinesView.as_view(), name='project_essential_medicines'),
+    path('project/<int:project_id>/health_workforce/', ProjectHealthWorkforceView.as_view(), name='project_health_workforce'),
+    path('project/<int:project_id>/health_info_systems/', ProjectHealthInfoSystemsView.as_view(), name='project_health_info_systems'),
+    path('project/<int:project_id>/health_financing/', ProjectHealthFinancingView.as_view(), name='project_health_financing'),
+    path('project/<int:project_id>/leadership_governance/', ProjectLeadershipGovernanceView.as_view(), name='project_leadership_governance'),
     path('project/<int:project_id>/data_quality/', ProjectDataQualityView.as_view(), name='project_data_quality'),
-    path('project/<int:project_id>/disaggregation/', ProjectDisaggregationView.as_view(), name='project_disaggregation'),
     path('project/<int:project_id>/download/<int:document_id>/', 
          ProjectOverviewView.as_view(), name='download_document'),
     path('api/county-boundaries/', county_boundaries_api, name='api_county_boundaries'),

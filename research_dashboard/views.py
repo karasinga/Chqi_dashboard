@@ -760,7 +760,7 @@ class ProjectTimelineView(View):
             yanchor="top"
         )
 
-class ProjectHIVServicesView(View):
+class ProjectServiceDeliveryView(View):
     template_name = 'research_dashboard/project_detail.html'
     
     @method_decorator(login_required)
@@ -772,13 +772,13 @@ class ProjectHIVServicesView(View):
         project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
-            'current_view': 'hiv_services',
+            'current_view': 'service_delivery',
         }
         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render(request, 'research_dashboard/partials/hiv_services_content.html', context)
+            return render(request, 'research_dashboard/partials/service_delivery_content.html', context)
         return render(request, self.template_name, context)
 
-class ProjectNCDServicesView(View):
+class ProjectEssentialMedicinesView(View):
     template_name = 'research_dashboard/project_detail.html'
     
     @method_decorator(login_required)
@@ -790,13 +790,13 @@ class ProjectNCDServicesView(View):
         project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
-            'current_view': 'ncd_services',
+            'current_view': 'essential_medicines',
         }
         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render(request, 'research_dashboard/partials/ncd_services_content.html', context)
+            return render(request, 'research_dashboard/partials/essential_medicines_content.html', context)
         return render(request, self.template_name, context)
 
-class ProjectIntegrationView(View):
+class ProjectHealthWorkforceView(View):
     template_name = 'research_dashboard/project_detail.html'
     
     @method_decorator(login_required)
@@ -808,13 +808,13 @@ class ProjectIntegrationView(View):
         project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
-            'current_view': 'integration',
+            'current_view': 'health_workforce',
         }
         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render(request, 'research_dashboard/partials/integration_content.html', context)
+            return render(request, 'research_dashboard/partials/health_workforce_content.html', context)
         return render(request, self.template_name, context)
 
-class ProjectStockSupplyView(View):
+class ProjectHealthInfoSystemsView(View):
     template_name = 'research_dashboard/project_detail.html'
     
     @method_decorator(login_required)
@@ -826,13 +826,13 @@ class ProjectStockSupplyView(View):
         project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
-            'current_view': 'stock_supply',
+            'current_view': 'health_info_systems',
         }
         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render(request, 'research_dashboard/partials/stock_supply_content.html', context)
+            return render(request, 'research_dashboard/partials/health_info_systems_content.html', context)
         return render(request, self.template_name, context)
 
-class ProjectReferralLinkageView(View):
+class ProjectHealthFinancingView(View):
     template_name = 'research_dashboard/project_detail.html'
     
     @method_decorator(login_required)
@@ -844,10 +844,28 @@ class ProjectReferralLinkageView(View):
         project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
-            'current_view': 'referral_linkage',
+            'current_view': 'health_financing',
         }
         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render(request, 'research_dashboard/partials/referral_linkage_content.html', context)
+            return render(request, 'research_dashboard/partials/health_financing_content.html', context)
+        return render(request, self.template_name, context)
+
+class ProjectLeadershipGovernanceView(View):
+    template_name = 'research_dashboard/project_detail.html'
+    
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        project_id = kwargs.get('project_id')
+        project = get_object_or_404(ResearchProject, pk=project_id)
+        context = {
+            'project': project,
+            'current_view': 'leadership_governance',
+        }
+        if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render(request, 'research_dashboard/partials/leadership_governance_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectDataQualityView(View):
