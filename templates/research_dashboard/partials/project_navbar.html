@@ -14,38 +14,45 @@
     </li>
     <!-- New tabs added below -->
     <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'hiv_services' %}active{% endif %}"
-           href="{% url 'project_hiv_services' project_id=project.id %}"
-           data-view="hiv_services">
-            <i class="mdi mdi-heart-pulse"></i> HIV services
+        <a class="nav-link project-nav-link {% if current_view == 'service_delivery' %}active{% endif %}"
+           href="{% url 'project_service_delivery' project_id=project.id %}"
+           data-view="service_delivery">
+            <i class="mdi mdi-heart-pulse"></i> Service delivery
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'ncd_services' %}active{% endif %}"
-           href="{% url 'project_ncd_services' project_id=project.id %}"
-           data-view="ncd_services">
-            <i class="mdi mdi-stethoscope"></i> NCD services
+        <a class="nav-link project-nav-link {% if current_view == 'essential_medicines' %}active{% endif %}"
+           href="{% url 'project_essential_medicines' project_id=project.id %}"
+           data-view="essential_medicines">
+            <i class="mdi mdi-stethoscope"></i> Access To Essential Medicines
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'integration' %}active{% endif %}"
-           href="{% url 'project_integration' project_id=project.id %}"
-           data-view="integration">
-            <i class="mdi mdi-connection"></i> Integration
+        <a class="nav-link project-nav-link {% if current_view == 'health_workforce' %}active{% endif %}"
+           href="{% url 'project_health_workforce' project_id=project.id %}"
+           data-view="health_workforce">
+            <i class="mdi mdi-connection"></i> Health Workforce
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'stock_supply' %}active{% endif %}"
-           href="{% url 'project_stock_supply' project_id=project.id %}"
-           data-view="stock_supply">
-            <i class="mdi mdi-package-variant"></i> Stock & Supply
+        <a class="nav-link project-nav-link {% if current_view == 'health_info_systems' %}active{% endif %}"
+           href="{% url 'project_health_info_systems' project_id=project.id %}"
+           data-view="health_info_systems">
+            <i class="mdi mdi-package-variant"></i> Health Information Systems
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'referral_linkage' %}active{% endif %}"
-           href="{% url 'project_referral_linkage' project_id=project.id %}"
-           data-view="referral_linkage">
-            <i class="mdi mdi-account-arrow-right"></i> Referral & Linkage
+        <a class="nav-link project-nav-link {% if current_view == 'health_financing' %}active{% endif %}"
+           href="{% url 'project_health_financing' project_id=project.id %}"
+           data-view="health_financing">
+            <i class="mdi mdi-account-arrow-right"></i> Health System Financing
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link project-nav-link {% if current_view == 'leadership_governance' %}active{% endif %}"
+           href="{% url 'project_leadership_governance' project_id=project.id %}"
+           data-view="leadership_governance">
+            <i class="mdi mdi-account-tie"></i> Leadership & Governance
         </a>
     </li>
     <li class="nav-item">
@@ -53,13 +60,6 @@
            href="{% url 'project_data_quality' project_id=project.id %}"
            data-view="data_quality">
             <i class="mdi mdi-database-check"></i> Data Quality
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'disaggregation' %}active{% endif %}"
-           href="{% url 'project_disaggregation' project_id=project.id %}"
-           data-view="disaggregation">
-            <i class="mdi mdi-chart-pie"></i> Disaggregation
         </a>
     </li>
 </ul>
