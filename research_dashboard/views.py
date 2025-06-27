@@ -778,7 +778,7 @@ class ProjectServiceDeliveryView(View):
             return render(request, 'research_dashboard/partials/service_delivery_content.html', context)
         return render(request, self.template_name, context)
 
-class ProjectEssentialMedicinesView(View):
+class ProjectHealthProductsTechnologiesView(View):
     template_name = 'research_dashboard/project_detail.html'
     
     @method_decorator(login_required)
@@ -790,13 +790,13 @@ class ProjectEssentialMedicinesView(View):
         project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
-            'current_view': 'essential_medicines',
+            'current_view': 'health_products_technologies',
         }
         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render(request, 'research_dashboard/partials/essential_medicines_content.html', context)
+            return render(request, 'research_dashboard/partials/health_products_technologies_content.html', context)
         return render(request, self.template_name, context)
 
-class ProjectHealthWorkforceView(View):
+class ProjectHumanResourceForHealthView(View):
     template_name = 'research_dashboard/project_detail.html'
     
     @method_decorator(login_required)
@@ -808,10 +808,10 @@ class ProjectHealthWorkforceView(View):
         project = get_object_or_404(ResearchProject, pk=project_id)
         context = {
             'project': project,
-            'current_view': 'health_workforce',
+            'current_view': 'human_resource_for_health',
         }
         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render(request, 'research_dashboard/partials/health_workforce_content.html', context)
+            return render(request, 'research_dashboard/partials/human_resource_for_health_content.html', context)
         return render(request, self.template_name, context)
 
 class ProjectHealthInfoSystemsView(View):

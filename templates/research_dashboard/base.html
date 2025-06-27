@@ -375,12 +375,14 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('main-content');
-            
-            sidebar.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
             mainContent.classList.toggle('main-content-collapsed');
 
+            // Save the state to local storage
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+
             // Re-initialize or destroy tooltips based on state
-            if (sidebar.classList.contains('sidebar-collapsed')) {
+            if (isCollapsed) {
                 // Initialize tooltips for collapsed view
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -399,6 +401,24 @@
                 });
             }
         }
+
+        // On page load, check local storage for sidebar state
+        document.addEventListener("DOMContentLoaded", function() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+            if (isCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                mainContent.classList.add('main-content-collapsed');
+                // Initialize tooltips for collapsed view on load
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+                sidebar.dataset.tooltips = JSON.stringify(tooltipList.map(t => t._element.id));
+            }
+        });
     </script>
     <script src="{% static 'research_dashboard/js/main.js' %}"></script>
     {% block scripts %}
