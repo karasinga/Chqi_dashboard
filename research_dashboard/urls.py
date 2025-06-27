@@ -3,7 +3,7 @@ from .views import DashboardView, ProjectOverviewView, ProjectTimelineView
 from .views import AboutView, LandingPageView, EvaluatorListView, EvaluatorUpdateView
 from .views import EvaluatorDeleteView, EvaluationView, EvaluationDetailView, EvaluationUpdateView
 from .views import update_phase_status, update_milestone_status, update_timeline_order
-from .views import ProjectServiceDeliveryView, ProjectEssentialMedicinesView, ProjectHealthWorkforceView
+from .views import ProjectServiceDeliveryView, ProjectHealthProductsTechnologiesView, ProjectHumanResourceForHealthView
 from .views import ProjectHealthInfoSystemsView, ProjectHealthFinancingView, ProjectDataQualityView
 from .views import ProjectLeadershipGovernanceView, county_boundaries_api
 from django.contrib.auth.views import LogoutView  # Add logout view
@@ -19,8 +19,8 @@ urlpatterns = [
     path('update_milestone_status/<int:milestone_id>/', update_milestone_status, name='update_milestone_status'),
     path('update_timeline_order/', update_timeline_order, name='update_timeline_order'),
     path('project/<int:project_id>/service_delivery/', ProjectServiceDeliveryView.as_view(), name='project_service_delivery'),
-    path('project/<int:project_id>/essential_medicines/', ProjectEssentialMedicinesView.as_view(), name='project_essential_medicines'),
-    path('project/<int:project_id>/health_workforce/', ProjectHealthWorkforceView.as_view(), name='project_health_workforce'),
+    path('project/<int:project_id>/health_products_and_technologies/', ProjectHealthProductsTechnologiesView.as_view(), name='project_health_products_technologies'),
+    path('project/<int:project_id>/human_resource_for_health/', ProjectHumanResourceForHealthView.as_view(), name='project_human_resource_for_health'),
     path('project/<int:project_id>/health_info_systems/', ProjectHealthInfoSystemsView.as_view(), name='project_health_info_systems'),
     path('project/<int:project_id>/health_financing/', ProjectHealthFinancingView.as_view(), name='project_health_financing'),
     path('project/<int:project_id>/leadership_governance/', ProjectLeadershipGovernanceView.as_view(), name='project_leadership_governance'),

@@ -1,64 +1,82 @@
-<ul class="nav nav-tabs card-header-tabs" id="project-nav-tabs">
-    <li class="nav-item">
+<ul class="nav nav-tabs" id="project-nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
         <a class="nav-link {% if current_view == 'overview' %}active{% endif %}"
-           href="{% url 'project_overview' project_id=project.id %}">
+           href="{% url 'project_overview' project_id=project.id %}"
+           role="tab"
+           aria-selected="{% if current_view == 'overview' %}true{% else %}false{% endif %}">
             <i class="mdi mdi-information-outline"></i> Project Overview
         </a>
     </li>
-    <li class="nav-item">
+    <li class="nav-item" role="presentation">
         <a class="nav-link project-nav-link {% if current_view == 'timeline' %}active{% endif %}"
            href="{% url 'project_timeline' project_id=project.id %}"
-           data-view="timeline">
+           data-view="timeline"
+           role="tab"
+           aria-selected="{% if current_view == 'timeline' %}true{% else %}false{% endif %}">
             <i class="mdi mdi-chart-timeline"></i> Timeline
         </a>
     </li>
     <!-- New tabs added below -->
-    <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'service_delivery' %}active{% endif %}"
+    <li class="nav-item" role="presentation">
+        <a class="nav-link project-nav-link {% if current_view == 'project_service_delivery' %}active{% endif %}"
            href="{% url 'project_service_delivery' project_id=project.id %}"
-           data-view="service_delivery">
-            <i class="mdi mdi-heart-pulse"></i> Service Delivery
+           data-view="project_service_delivery"
+           role="tab"
+           aria-selected="{% if current_view == 'project_service_delivery' %}true{% else %}false{% endif %}">
+            <i class="mdi mdi-stethoscope"></i> Service Delivery
         </a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'essential_medicines' %}active{% endif %}"
-           href="{% url 'project_essential_medicines' project_id=project.id %}"
-           data-view="essential_medicines">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link project-nav-link {% if current_view == 'health_products_technologies' %}active{% endif %}"
+           href="{% url 'project_health_products_technologies' project_id=project.id %}"
+           data-view="health_products_technologies"
+           role="tab"
+           aria-selected="{% if current_view == 'health_products_technologies' %}true{% else %}false{% endif %}">
             <i class="mdi mdi-stethoscope"></i> Health Products and Technologies
         </a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link project-nav-link {% if current_view == 'health_workforce' %}active{% endif %}"
-           href="{% url 'project_health_workforce' project_id=project.id %}"
-           data-view="health_workforce">
-            <i class="mdi mdi-connection"></i> Health Workforce
+    <li class="nav-item" role="presentation">
+        <a class="nav-link project-nav-link {% if current_view == 'human_resource_for_health' %}active{% endif %}"
+           href="{% url 'project_human_resource_for_health' project_id=project.id %}"
+           data-view="human_resource_for_health"
+           role="tab"
+           aria-selected="{% if current_view == 'human_resource_for_health' %}true{% else %}false{% endif %}">
+            <i class="mdi mdi-connection"></i> Human Resource for Health
         </a>
     </li>
-    <li class="nav-item">
+    <li class="nav-item" role="presentation">
         <a class="nav-link project-nav-link {% if current_view == 'health_info_systems' %}active{% endif %}"
            href="{% url 'project_health_info_systems' project_id=project.id %}"
-           data-view="health_info_systems">
+           data-view="health_info_systems"
+           role="tab"
+           aria-selected="{% if current_view == 'health_info_systems' %}true{% else %}false{% endif %}">
             <i class="mdi mdi-package-variant"></i> Health Information Systems
         </a>
     </li>
-    <li class="nav-item">
+    <li class="nav-item" role="presentation">
         <a class="nav-link project-nav-link {% if current_view == 'health_financing' %}active{% endif %}"
            href="{% url 'project_health_financing' project_id=project.id %}"
-           data-view="health_financing">
+           data-view="health_financing"
+           role="tab"
+           aria-selected="{% if current_view == 'health_financing' %}true{% else %}false{% endif %}">
             <i class="mdi mdi-account-arrow-right"></i> Health System Financing
         </a>
     </li>
-    <li class="nav-item">
+    <li class="nav-item" role="presentation">
         <a class="nav-link project-nav-link {% if current_view == 'leadership_governance' %}active{% endif %}"
            href="{% url 'project_leadership_governance' project_id=project.id %}"
-           data-view="leadership_governance">
+           data-view="leadership_governance"
+           role="tab"
+           aria-selected="{% if current_view == 'leadership_governance' %}true{% else %}false{% endif %}">
             <i class="mdi mdi-account-tie"></i> Leadership & Governance
         </a>
     </li>
-    <li class="nav-item">
+    <li class="nav-item" role="presentation">
         <a class="nav-link project-nav-link {% if current_view == 'data_quality' %}active{% endif %}"
            href="{% url 'project_data_quality' project_id=project.id %}"
-           data-view="data_quality">
+           data-view="data_quality"
+           role="tab"
+           aria-selected="{% if current_view == 'data_quality' %}true{% else %}false{% endif %}">
             <i class="mdi mdi-database-check"></i> Data Quality
         </a>
     </li>
