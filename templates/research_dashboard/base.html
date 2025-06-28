@@ -430,13 +430,16 @@
     {% endblock %}
 
     <script>
+      // In base.html, inside the <script> tag at the bottom
+
       // Make initializeAllModals globally accessible
       window.initializeAllModals = function() {
         console.log("Initializing all modals");
         // Edit Phase Modal
         const editPhaseModal = document.getElementById('editPhaseModal');
         if (editPhaseModal) {
-          const editPhaseModalInstance = bootstrap.Modal.getOrCreateInstance(editPhaseModal);
+          // No need to create an instance here, data-bs-toggle handles it.
+          // We just listen for the event.
           editPhaseModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             document.getElementById("editPhaseId").value = button.getAttribute("data-phase-id");
@@ -448,10 +451,31 @@
           });
         }
 
+        // =============================================== //
+        //                  START OF FIX                   //
+        // =============================================== //
+        
+        // Add Document Modal - CORRECTED Implementation
+        const addDocumentModal = document.getElementById('addDocumentModal');
+        if (addDocumentModal) {
+          // The data-bs-toggle="modal" attribute on the button handles showing the modal.
+          // We only need to add an event listener if we want to do something extra,
+          // like resetting the form when the modal opens.
+          addDocumentModal.addEventListener('show.bs.modal', function() {
+            const form = this.querySelector('form');
+            if (form) {
+              form.reset(); // Clear the form for a new entry
+            }
+          });
+        }
+
+        // =============================================== //
+        //                   END OF FIX                    //
+        // =============================================== //
+
         // Edit Milestone Modal
         const editMilestoneModal = document.getElementById('editMilestoneModal');
         if (editMilestoneModal) {
-          const editMilestoneModalInstance = bootstrap.Modal.getOrCreateInstance(editMilestoneModal);
           editMilestoneModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             document.getElementById("editMilestoneId").value = button.getAttribute("data-milestone-id");
@@ -459,6 +483,9 @@
             document.getElementById("editMilestoneDueDate").value = button.getAttribute("data-due-date");
             document.getElementById("editMilestoneDescription").value = button.getAttribute("data-description");
             document.getElementById("editMilestoneStatus").value = button.getAttribute("data-status");
+            
+            // Trigger the change event to ensure the completed date field visibility is correct on open
+            document.getElementById('editMilestoneStatus').dispatchEvent(new Event('change'));
           });
         }
 
@@ -471,6 +498,25 @@
           });
         }
 
+        // =================== NEW DELETE DOCUMENT MODAL SCRIPT ===================
+        const deleteDocumentModal = document.getElementById('deleteDocumentModal');
+        if (deleteDocumentModal) {
+          deleteDocumentModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget; // Button that triggered the modal
+            const documentId = button.getAttribute('data-document-id');
+            const documentName = button.getAttribute('data-document-name');
+            
+            // Set the document ID in the hidden form input
+            const formInput = this.querySelector('#deleteDocumentId');
+            formInput.value = documentId;
+
+            // Set the document name in the confirmation message
+            const nameSpan = this.querySelector('#documentNameToDelete');
+            nameSpan.textContent = documentName;
+          });
+        }
+        // =======================================================================
+
         // Delete Phase Modal
         const deletePhaseModal = document.getElementById('deletePhaseModal');
         if (deletePhaseModal) {
@@ -479,55 +525,6 @@
                 document.getElementById('deletePhaseId').value = button.getAttribute('data-phase-id');
             });
         }
-      }
-
-      document.addEventListener("DOMContentLoaded", function() {
-        // Initial load
-        window.initializeAllModals();
-        htmx.process(document.body);
-
-        // Re-initialize after HTMX swaps
-        document.body.addEventListener("htmx:afterSwap", function(evt) {
-            console.log("htmx:afterSwap triggered, re-initializing components.");
-            window.initializeAllModals();
-            htmx.process(evt.detail.target); // Process only the updated content
-            
-            // Reinitialize any custom components in the swapped content
-            const forms = evt.detail.target.querySelectorAll('form');
-            forms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    if (!this.checkValidity()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                    this.classList.add('was-validated');
-                }, false);
-            });
-        });
-
-        document.body.addEventListener("htmx:afterRequest", function(evt) {
-            if (evt.detail.successful) {
-                // Close any open modals after successful request
-                const openModal = document.querySelector('.modal.show');
-                if (openModal) {
-                    bootstrap.Modal.getInstance(openModal).hide();
-                }
-                
-                // Refresh any filtered content if needed
-                if (evt.detail.requestConfig.path.includes('filter')) {
-                    htmx.trigger('#filter-section', 'refresh');
-                }
-            }
-        });
-      });
-
-      // Reset form when add milestone modal is shown
-      const addMilestoneModal = document.getElementById('addMilestoneModal');
-      if (addMilestoneModal) {
-        addMilestoneModal.addEventListener('show.bs.modal', function() {
-            const form = document.getElementById('addMilestoneForm');
-            if(form) form.reset();
-        });
       }
   </script>
 </body>

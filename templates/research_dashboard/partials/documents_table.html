@@ -1,0 +1,50 @@
+{% load static %}
+<div class="table-responsive">
+  <table class="table table-hover mb-0">
+    <thead class="table-light">
+      <tr>
+        <th class="py-3 px-4">Name</th>
+        <th class="py-3 px-4">Uploaded</th>
+        <th class="py-3 px-4">Description</th>
+        <th class="py-3 px-4 text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for document in documents %}
+      <tr>
+        <td class="py-3 px-4">{{ document.name }}</td>
+        <td class="py-3 px-4">{{ document.uploaded_at|date:"Y-m-d" }}</td>
+        <td class="py-3 px-4 text-muted">
+          {{ document.description|default:"-"|truncatechars:40 }}
+        </td>
+        <td class="py-3 px-4 text-end">
+          <a
+            href="{{ document.document.url }}"
+            class="btn btn-sm btn-outline-primary"
+            download
+          >
+            <i class="mdi mdi-download me-1"></i> Download
+          </a>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteDocumentModal"
+            data-document-id="{{ document.id }}"
+            data-document-name="{{ document.name|escape }}"
+            title="Delete Document"
+          >
+            <i class="mdi mdi-delete-outline"></i> Delete
+          </button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center py-5">
+          <p class="mb-0 text-muted">No documents uploaded yet.</p>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

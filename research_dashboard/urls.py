@@ -27,6 +27,8 @@ urlpatterns = [
     path('project/<int:project_id>/data_quality/', ProjectDataQualityView.as_view(), name='project_data_quality'),
     path('project/<int:project_id>/download/<int:document_id>/', 
          ProjectOverviewView.as_view(), name='download_document'),
+    path('project/<int:project_id>/upload_document/', 
+         ProjectOverviewView.as_view(), name='upload_document'),
     path('api/county-boundaries/', county_boundaries_api, name='api_county_boundaries'),
     path('about/', AboutView.as_view(), name='about'),
     path('evaluators/', EvaluatorListView.as_view(), name='evaluators'),

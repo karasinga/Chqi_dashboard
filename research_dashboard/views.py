@@ -219,8 +219,14 @@ class ProjectOverviewView(View):
         return render(request, self.template_name, context)
 
     def post(self, request, project_id):
-        """Handle document uploads"""
+        """Handle document operations"""
         project = get_object_or_404(ResearchProject, pk=project_id)
+        
+        # Handle document deletion
+        if request.POST.get('delete_document') == 'true':
+            return self._handle_document_delete(request, project)
+            
+        # Handle document upload
         form = DocumentUploadForm(request.POST, request.FILES)
         if form.is_valid():
             document = form.save(commit=False)
@@ -244,6 +250,27 @@ class ProjectOverviewView(View):
             if request.headers.get('HX-Request'):
                 return render(request, 'research_dashboard/partials/overview_content.html', context)
             return render(request, self.template_name, context)
+
+    def _handle_document_delete(self, request, project):
+        """Handle document deletion"""
+        try:
+            document = get_object_or_404(ResearchDocument, 
+                pk=request.POST.get('document_id'),
+                project=project
+            )
+            document.delete()
+            
+            if request.headers.get('HX-Request'):
+                # Return just the documents table for HTMX requests
+                return render(request, 'research_dashboard/partials/documents_table.html', {
+                    'documents': project.documents.all()
+                })
+            return redirect('project_overview', project_id=project.id)
+        except Exception as e:
+            messages.error(request, f'Error deleting document: {str(e)}')
+            if request.headers.get('HX-Request'):
+                return HttpResponse(f'<div class="alert alert-danger">Error deleting document: {str(e)}</div>', status=400)
+            return redirect('project_overview', project_id=project.id)
 
     def view_document(self, request, document_id):
         """View a document in the browser"""
