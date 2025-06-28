@@ -739,6 +739,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="DELETE">
                     <input type="hidden" name="project_id" id="deleteProjectId" value="">
+                    <input type="hidden" name="delete_project" value="true">
                     <button type="submit" class="btn btn-danger rounded-pill px-4">
                         <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                         Delete

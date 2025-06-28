@@ -91,6 +91,9 @@ class DashboardView(View):
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
+        # Get distinct project names for the dropdown
+        project_names = base_projects.values_list('title', flat=True).distinct().order_by('title')
+        
         context = {
             'page_obj': page_obj,
             'status_counts': status_counts,
@@ -98,7 +101,9 @@ class DashboardView(View):
             'date_from': date_from or '',
             'date_to': date_to or '',
             'status_options': ResearchProject.PROJECT_STATUS,
-            'total_projects_count': base_projects.count()
+            'total_projects_count': base_projects.count(),
+            'project_names': project_names,
+            'project_name_filter': project_name or ''
         }
         return render(request, self.template_name, context)
 

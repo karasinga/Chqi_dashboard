@@ -1,6 +1,7 @@
 {% extends "research_dashboard/base.html" %}
 
 {% block content %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <div class="d-flex flex-column mb-4">
     <!-- Header and Create Button -->
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -19,8 +20,12 @@
                     <label class="form-label small text-muted mb-1">Project Name</label>
                     <div class="d-flex">
                         <span class="input-group-text bg-white border-end-0"><i class="mdi mdi-magnify"></i></span>
-                        <input type="text" name="project_name" class="form-control" id="projectNameFilter" 
-                               placeholder="Search projects..." value="{{ project_name_filter }}">
+                        <select name="project_name" class="form-control" id="projectNameFilter">
+                            <option value="">All Projects</option>
+                            {% for project_name in project_names %}
+                                <option value="{{ project_name }}" {% if project_name_filter == project_name %}selected{% endif %}>{{ project_name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
                 
@@ -193,15 +198,68 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 /* Filter functions */
 function applyStatusFilter(status) {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams();
     params.set('status', status);
     params.delete('page');
     params.delete('date_from');
     params.delete('date_to');
-    window.location.search = params.toString();
+    params.delete('project_name');
+    
+    // Show loading state
+    const tableContainer = document.querySelector('.table-responsive');
+    tableContainer.classList.add('table-loading');
+    const spinner = document.createElement('div');
+    spinner.className = 'loading-spinner';
+    spinner.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
+    tableContainer.appendChild(spinner);
+    
+    // Add loading overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    tableContainer.appendChild(overlay);
+
+    // Disable filter inputs during loading
+    const filterInputs = document.querySelectorAll('#filterForm select, #filterForm input');
+    filterInputs.forEach(input => input.disabled = true);
+
+    fetch(`?${params.toString()}`)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Update table content
+            document.querySelector('tbody').innerHTML = doc.querySelector('tbody').innerHTML;
+            
+            // Update status cards
+            document.querySelector('.row.mb-4').innerHTML = doc.querySelector('.row.mb4').innerHTML;
+            
+            // Update pagination if it exists
+            const newPagination = doc.querySelector('.pagination');
+            if (newPagination) {
+                const paginationContainer = document.querySelector('.pagination');
+                if (paginationContainer) {
+                    paginationContainer.innerHTML = newPagination.innerHTML;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            // Remove loading state
+            tableContainer.classList.remove('table-loading');
+            const spinner = tableContainer.querySelector('.loading-spinner');
+            const overlay = tableContainer.querySelector('.loading-overlay');
+            if (spinner) tableContainer.removeChild(spinner);
+            if (overlay) tableContainer.removeChild(overlay);
+            filterInputs.forEach(input => input.disabled = false);
+        });
 }
 
 function applyFilters() {
@@ -237,9 +295,6 @@ function applyFilters() {
     fetch(`?${params.toString()}`)
         .then(response => response.text())
         .then(html => {
-            // Save current cursor position
-            const cursorPos = projectNameFilter.selectionStart;
-            
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
@@ -257,10 +312,6 @@ function applyFilters() {
                     paginationContainer.innerHTML = newPagination.innerHTML;
                 }
             }
-
-            // Restore cursor position
-            projectNameFilter.focus();
-            projectNameFilter.setSelectionRange(cursorPos, cursorPos);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -273,6 +324,8 @@ function applyFilters() {
             if (spinner) tableContainer.removeChild(spinner);
             if (overlay) tableContainer.removeChild(overlay);
             filterInputs.forEach(input => input.disabled = false);
+            // Re-initialize select2 after content update
+            $('#projectNameFilter').select2();
         });
 }
 
@@ -287,17 +340,67 @@ function prepareEditModal(projectId, projectData) {
     document.getElementById('projectId').value = projectId;
     
     const form = document.getElementById('evaluationForm');
-    form.title.value = projectData.title;
-    form.description.value = projectData.description;
-    form.status.value = projectData.status;
-    form.start_date.value = projectData.start_date;
+    form.reset(); // Clear any existing values
+    
+    // Set form values from projectData
+    form.title.value = projectData.title || '';
+    form.description.value = projectData.description || '';
+    form.status.value = projectData.status || 'active';
+    form.start_date.value = projectData.start_date || '';
     form.end_date.value = projectData.end_date || '';
+    
+    // Set lead researcher if available
     if (projectData.lead_researcher) {
         form.lead_researcher.value = projectData.lead_researcher;
     }
+    
+    // Set form action to include project ID
+    form.action = `{% url 'dashboard' %}?project_id=${projectId}`;
 }
 
-// Initialize event listeners
+// Update form submission to handle both create and update
+document.getElementById('evaluationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    const projectId = document.getElementById('projectId').value;
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    spinner.classList.remove('d-none');
+    submitBtn.disabled = true;
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.success) {
+            window.location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        spinner.classList.add('d-none');
+        submitBtn.disabled = false;
+    });
+});
+
+    // Initialize event listeners
 document.addEventListener('DOMContentLoaded', function() {
     const projectNameFilter = document.getElementById('projectNameFilter');
     const statusFilter = document.getElementById('statusFilter');
@@ -305,18 +408,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateToFilter = document.getElementById('dateToFilter');
     const clearFilters = document.getElementById('clearFilters');
 
-    // Project name filter with instant feedback
-    let filterTimeout;
-    projectNameFilter.addEventListener('input', () => {
-        const cursorPos = projectNameFilter.selectionStart;
-        
-        clearTimeout(filterTimeout);
-        filterTimeout = setTimeout(() => {
-            applyFilters().finally(() => {
-                projectNameFilter.focus();
-                projectNameFilter.setSelectionRange(cursorPos, cursorPos);
-            });
-        }, 400); // Slightly longer delay for better typing experience
+    // Initialize Select2
+    $('#projectNameFilter').select2();
+
+    // Project name filter with instant feedback (now for select2 change event)
+    $('#projectNameFilter').on('change', function() {
+        applyFilters();
     });
     
     statusFilter.addEventListener('change', applyFilters);
@@ -324,7 +421,8 @@ document.addEventListener('DOMContentLoaded', function() {
     dateToFilter.addEventListener('change', applyFilters);
 
     clearFilters.addEventListener('click', () => {
-        projectNameFilter.value = '';
+        // For select2, setting value and triggering change is needed
+        $('#projectNameFilter').val('').trigger('change'); 
         statusFilter.value = '';
         dateFromFilter.value = '';
         dateToFilter.value = '';
