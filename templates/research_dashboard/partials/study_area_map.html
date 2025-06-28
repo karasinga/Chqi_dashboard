@@ -1,0 +1,442 @@
+<!-- Study Area Location (Dynamic Map) - IMPROVED UI -->
+<div class="card shadow-sm border-light mb-4">
+  <div class="card-body p-3 p-lg-4">
+    <!-- Card Header: Title, Filters, and Search -->
+    <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-center gap-3 mb-3">
+      <!-- Card Title -->
+      <h5 class="card-title mb-0 me-lg-3 text-nowrap">
+        <i class="mdi mdi-map-marker-radius me-1"></i>
+        Study Area Intelligence Map
+      </h5>
+
+      <!-- Filters/Search Group -->
+      <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
+        <!-- NEW: Facility Type Filter -->
+        <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="mdi mdi-filter-variant"></i></span>
+            <select id="facility-type-filter" class="form-select">
+                <option value="all" selected>All Facility Types</option>
+                <option value="intervention">Intervention Only</option>
+                <option value="control">Control Only</option>
+            </select>
+        </div>
+
+        <!-- County Filter -->
+        <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="mdi mdi-map-legend"></i></span>
+            <select id="county-filter" class="form-select">
+                <option value="all" selected>All Counties</option>
+                <!-- Options are added here by JavaScript -->
+            </select>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
+          <input
+            type="text"
+            id="map-search-box"
+            class="form-control"
+            placeholder="Search for a facility..."
+          />
+        </div>
+        <!-- Reset View Button -->
+        <button id="reset-map-view-btn" class="btn btn-sm btn-outline-secondary" title="Reset Map View">
+          <i class="mdi mdi-restart"></i>
+        </button>
+        
+        <!-- Fullscreen Button -->
+        <button id="fullscreen-map-btn" class="btn btn-sm btn-outline-secondary" title="Toggle Fullscreen">
+          <i class="mdi mdi-fullscreen"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- The Map Container -->
+    <div
+      id="study-area-map"
+      class="border rounded"
+      style="height: 80vh; width: 100%;"
+    >
+      <!-- Loading Spinner (Optional but recommended) -->
+      <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading map...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Legend (Now Interactive & Polished) -->
+    <div id="map-legend-wrapper" class="mt-3 p-2 bg-light border rounded-2">
+        <div id="map-legend" class="d-flex flex-wrap justify-content-center justify-content-md-start gap-2">
+            <!-- Intervention Statuses -->
+            <div class="legend-item active" data-status="meeting_targets" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                    <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #198754; border-radius: 50%;"></span>
+                    <span>Meeting Targets</span>
+                </div>
+            </div>
+            <div class="legend-item active" data-status="at_risk" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                    <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffc107; border-radius: 50%;"></span>
+                    <span>At Risk</span>
+                </div>
+            </div>
+            <div class="legend-item active" data-status="underperforming" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                    <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%;"></span>
+                    <span>Underperforming</span>
+                </div>
+            </div>
+            <!-- NEW: Control Facility Legend -->
+            <div class="legend-item active" data-type="control" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                    <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #0d6efd; border-radius: 50%;"></span>
+                    <span>Control Facility</span>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     LEAFLET SCRIPT (UPDATED FOR DYNAMIC DATA AND SEARCH)
+==================================================================== -->
+<!-- At the end of your body, before closing </body> tag -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""></script>
+
+<!-- Style for the Layer Control & Legend -->
+<style>
+  /* Base style for all legend items */
+  .legend-item {
+    padding: 0.35rem 0.85rem;
+    border-radius: 50rem; /* pill shape */
+    transition: all 0.2s ease-in-out;
+    font-size: 0.85rem;
+    border: 1px solid;
+    font-weight: 500;
+  }
+  
+  .legend-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  }
+  
+  .legend-item:not(.active) {
+    background-color: #f8f9fa; 
+    border-color: #dee2e6;     
+    color: #6c757d;           
+  }
+
+  .legend-item:not(.active) .d-inline-block {
+    opacity: 0.4;
+  }
+
+  .legend-item.active {
+    background-color: #fff;
+    opacity: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .legend-item.active .d-inline-block {
+    opacity: 1;
+  }
+
+  .legend-item[data-status="meeting_targets"].active {
+    border-color: #198754;
+    color: #0f5132;
+  }
+  .legend-item[data-status="at_risk"].active {
+    border-color: #ffc107;
+    color: #664d03;
+  }
+  .legend-item[data-status="underperforming"].active {
+    border-color: #dc3545;
+    color: #842029;
+  }
+  /* NEW STYLE for control facilities */
+  .legend-item[data-type="control"].active {
+    border-color: #0d6efd; /* Bootstrap primary blue */
+    color: #0a58ca;
+  }
+
+.map-section {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 0.5rem; 
+  margin-bottom: 1.5rem; 
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+}
+  /* Style for search result marker icon */
+  .search-result-marker i {
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+</style>
+
+
+<script>
+  // ===================================================================
+  // FIX: NEW JAVASCRIPT FOR ACTIVE TAB STATE
+  // ===================================================================
+  function initializeTabEvents() {
+    const navTabsContainer = document.getElementById('project-nav-tabs');
+    if (!navTabsContainer) {
+      console.warn('Project navigation tabs container not found.');
+      return;
+    }
+    const navLinks = navTabsContainer.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('mousedown', function() {
+        navLinks.forEach(sibling => sibling.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  }
+
+
+  // ===================================================================
+  // MAP INITIALIZATION FUNCTION
+  // ===================================================================
+  async function initializeOverviewMap() {
+    const mapContainer = document.getElementById('study-area-map');
+    if (!mapContainer || mapContainer._leaflet_id) {
+      console.warn('Map container not found or already initialized');
+      return;
+    }
+
+    if (mapContainer.offsetWidth === 0 || mapContainer.offsetHeight === 0) {
+      console.warn('Map container has no visible dimensions');
+      return;
+    }
+
+    let countyBoundariesGeoJSON;
+    let countyBounds = {}; 
+
+    try {
+        mapContainer.innerHTML = `<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading map...</span></div></div>`;
+        const response = await fetch("{% url 'api_county_boundaries' %}"); 
+        if (!response.ok) throw new Error(`API request failed with status: ${response.status}`);
+        countyBoundariesGeoJSON = await response.json();
+        if (!countyBoundariesGeoJSON?.features?.length) throw new Error("Received empty or invalid GeoJSON data.");
+    } catch (error) {
+        console.error("Failed to fetch or process county boundaries:", error);
+        mapContainer.innerHTML = `<div class="alert alert-danger m-3"><strong>Error:</strong> Could not load map boundaries. ${error.message}</div>`;
+        return; 
+    }
+    
+    // Expanded dummy data with control and intervention facilities
+    const facilitiesGeoJSON = { "type": "FeatureCollection", "features": [ { "type": "Feature", "properties": { "name": "Kenyatta National Hospital", "county": "Nairobi", "facility_type": "intervention", "lead": "Dr. A. Njoroge", "kpi_value": 72, "status": "underperforming" }, "geometry": { "type": "Point", "coordinates": [36.806, -1.301] } }, { "type": "Feature", "properties": { "name": "Mbagathi Hospital", "county": "Nairobi", "facility_type": "intervention", "lead": "Dr. E. Otieno", "kpi_value": 88, "status": "at_risk" }, "geometry": { "type": "Point", "coordinates": [36.788, -1.315] } }, { "type": "Feature", "properties": { "name": "Pumwani Maternity Hospital", "county": "Nairobi", "facility_type": "intervention", "lead": "Dr. F. Wambui", "kpi_value": 95, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [36.842, -1.283] } }, { "type": "Feature", "properties": { "name": "Mama Lucy Kibaki Hospital", "county": "Nairobi", "facility_type": "control", "lead": "Dr. G. Kimani" }, "geometry": { "type": "Point", "coordinates": [36.898, -1.268] } }, { "type": "Feature", "properties": { "name": "Karen Hospital", "county": "Nairobi", "facility_type": "control", "lead": "Dr. H. Patel" }, "geometry": { "type": "Point", "coordinates": [36.724, -1.321] } }, { "type": "Feature", "properties": { "name": "Nairobi West Hospital", "county": "Nairobi", "facility_type": "control", "lead": "Dr. I. Juma" }, "geometry": { "type": "Point", "coordinates": [36.815, -1.309] } }, { "type": "Feature", "properties": { "name": "Thika Level 5 Hospital", "county": "Kiambu", "facility_type": "intervention", "lead": "Dr. D. Kamau", "kpi_value": 99, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [37.083, -1.047] } }, { "type": "Feature", "properties": { "name": "Gatundu Level 5 Hospital", "county": "Kiambu", "facility_type": "intervention", "lead": "Dr. J. Kariuki", "kpi_value": 68, "status": "underperforming" }, "geometry": { "type": "Point", "coordinates": [37.001, -1.092] } }, { "type": "Feature", "properties": { "name": "Tigoni Level 4 Hospital", "county": "Kiambu", "facility_type": "intervention", "lead": "Dr. K. Mwangi", "kpi_value": 85, "status": "at_risk" }, "geometry": { "type": "Point", "coordinates": [36.681, -1.165] } }, { "type": "Feature", "properties": { "name": "Kiambu Level 5 Hospital", "county": "Kiambu", "facility_type": "control", "lead": "Dr. B. Wanjiku" }, "geometry": { "type": "Point", "coordinates": [36.837, -1.171] } }, { "type": "Feature", "properties": { "name": "Kikuyu Hospital", "county": "Kiambu", "facility_type": "control", "lead": "Dr. L. Omondi" }, "geometry": { "type": "Point", "coordinates": [36.666, -1.258] } }, { "type": "Feature", "properties": { "name": "Ruiru Sub-County Hospital", "county": "Kiambu", "facility_type": "control", "lead": "Dr. M. Njeri" }, "geometry": { "type": "Point", "coordinates": [36.961, -1.155] } }, { "type": "Feature", "properties": { "name": "Kitui County Referral Hospital", "county": "Kitui", "facility_type": "intervention", "lead": "Dr. C. Mutisya", "kpi_value": 88, "status": "at_risk" }, "geometry": { "type": "Point", "coordinates": [38.016, -1.366] } }, { "type": "Feature", "properties": { "name": "Mwingi Level 4 Hospital", "county": "Kitui", "facility_type": "intervention", "lead": "Dr. N. Musyoka", "kpi_value": 94, "status": "meeting_targets" }, "geometry": { "type": "Point", "coordinates": [38.058, -0.932] } }, { "type": "Feature", "properties": { "name": "Mutomo Sub-County Hospital", "county": "Kitui", "facility_type": "intervention", "lead": "Dr. P. Kyalo", "kpi_value": 74, "status": "underperforming" }, "geometry": { "type": "Point", "coordinates": [38.217, -1.854] } }, { "type": "Feature", "properties": { "name": "Ikutha Sub-County Hospital", "county": "Kitui", "facility_type": "control", "lead": "Dr. Q. Maingi" }, "geometry": { "type": "Point", "coordinates": [38.169, -2.196] } }, { "type": "Feature", "properties": { "name": "Tseikuru Sub-County Hospital", "county": "Kitui", "facility_type": "control", "lead": "Dr. R. Muli" }, "geometry": { "type": "Point", "coordinates": [38.384, -0.329] } }, { "type": "Feature", "properties": { "name": "Zombe Sub-County Hospital", "county": "Kitui", "facility_type": "control", "lead": "Dr. S. Kilonzo" }, "geometry": { "type": "Point", "coordinates": [38.300, -1.450] } } ] };
+
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' });
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri' });
+    const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>' });
+    const baseMaps = { "Streets": osmLayer, "Satellite": satelliteLayer, "Light": lightLayer };
+    mapContainer.innerHTML = ''; 
+    const map = L.map(mapContainer, { layers: [lightLayer] });
+    const allDataLayers = L.featureGroup();
+    
+    // ==========================================================
+    // === THIS BLOCK CONTAINS THE CORRECTED LOGIC            ===
+    // ==========================================================
+    const countyLayer = L.geoJSON(countyBoundariesGeoJSON, {
+        style: { fillOpacity: 0.05, color: "#333", weight: 2, dashArray: '4' },
+        onEachFeature: function(feature, layer) {
+            const countyName = feature.properties.name || feature.properties.COUNTY_NAM;
+            if (countyName) {
+                layer.bindTooltip(countyName, { sticky: true });
+                
+                const featureBounds = layer.getBounds();
+
+                // If we already have bounds for this county, extend them
+                if (countyBounds[countyName]) {
+                    countyBounds[countyName].extend(featureBounds);
+                } 
+                // Otherwise, this is the first feature for this county, so set the initial bounds
+                else {
+                    countyBounds[countyName] = featureBounds;
+                }
+            }
+        }
+    }).addTo(map);
+    allDataLayers.addLayer(countyLayer);
+    
+    const FACILITY_COLORS = { meeting_targets: '#198754', at_risk: '#ffc107', underperforming: '#dc3545', control: '#0d6efd', default: '#6c757d' };
+    function getFacilityColor(props) {
+        if (props.facility_type === 'control') return FACILITY_COLORS.control;
+        return FACILITY_COLORS[props.status] || FACILITY_COLORS.default;
+    }
+
+    function pointToLayer(feature, latlng) {
+        return L.circleMarker(latlng, {
+            radius: 3.5,
+            fillColor: getFacilityColor(feature.properties),
+            color: "#000",
+            weight: 0.5,
+            opacity: 1,
+            fillOpacity: 0.9
+        });
+    }
+
+    function onEachFeature(feature, layer) {
+        if (feature.properties) {
+            const props = feature.properties;
+            const typeBadge = `<span class="badge" style="background-color: ${getFacilityColor(props)}; color: #fff;">${props.facility_type}</span>`;
+            let popupContent = `<h6 class="mb-1">${props.name}</h6>
+              <p class="text-muted mb-1 small d-flex justify-content-between">
+                ${props.county} County
+                ${typeBadge}
+              </p>
+              <hr class="my-1">
+              <strong>Lead:</strong> ${props.lead || 'N/A'}`;
+
+            if (props.facility_type === 'intervention') {
+                popupContent += `<br><strong>Performance:</strong> ${props.kpi_value}%`;
+            }
+            layer.bindPopup(popupContent);
+        }
+    }
+
+    const facilityLayers = {
+        control: L.geoJSON(facilitiesGeoJSON, { filter: (f) => f.properties.facility_type === 'control', pointToLayer, onEachFeature }),
+        meeting_targets: L.geoJSON(facilitiesGeoJSON, { filter: (f) => f.properties.facility_type === 'intervention' && f.properties.status === 'meeting_targets', pointToLayer, onEachFeature }),
+        at_risk: L.geoJSON(facilitiesGeoJSON, { filter: (f) => f.properties.facility_type === 'intervention' && f.properties.status === 'at_risk', pointToLayer, onEachFeature }),
+        underperforming: L.geoJSON(facilitiesGeoJSON, { filter: (f) => f.properties.facility_type === 'intervention' && f.properties.status === 'underperforming', pointToLayer, onEachFeature })
+    };
+    Object.values(facilityLayers).forEach(layer => { layer.addTo(map); allDataLayers.addLayer(layer); });
+    
+    let initialBounds;
+    if (allDataLayers.getLayers().length > 0) {
+        initialBounds = allDataLayers.getBounds().pad(0.1);
+        map.fitBounds(initialBounds);
+    } else {
+        map.setView([-1.286389, 36.817223], 7);
+        initialBounds = map.getBounds();
+    }
+    
+    const overlayMaps = {
+        '<i class="mdi mdi-vector-square me-1"></i> County Boundaries': countyLayer,
+        '<span class="d-inline-block me-1" style="width:10px;height:10px;background-color:#0d6efd;border-radius:50%;"></span> Control': facilityLayers.control,
+        '<span class="d-inline-block me-1" style="width:10px;height:10px;background-color:#198754;border-radius:50%;"></span> Meeting Targets': facilityLayers.meeting_targets,
+        '<span class="d-inline-block me-1" style="width:10px;height:10px;background-color:#ffc107;border-radius:50%;"></span> At Risk': facilityLayers.at_risk,
+        '<span class="d-inline-block me-1" style="width:10px;height:10px;background-color:#dc3545;border-radius:50%;"></span> Underperforming': facilityLayers.underperforming
+    };
+    L.control.layers(baseMaps, overlayMaps, { collapsed: true }).addTo(map);
+
+    const legendControlItem = document.querySelector('.legend-item[data-type="control"]');
+    const legendStatusItems = document.querySelectorAll('.legend-item[data-status]');
+    
+    function toggleLayer(event, layer) {
+        event.currentTarget.classList.toggle('active');
+        map.hasLayer(layer) ? map.removeLayer(layer) : map.addLayer(layer);
+    }
+    
+    legendControlItem.addEventListener('click', (e) => toggleLayer(e, facilityLayers.control));
+    legendStatusItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            const status = e.currentTarget.getAttribute('data-status');
+            toggleLayer(e, facilityLayers[status]);
+        });
+    });
+
+    const countyFilter = document.getElementById('county-filter');
+    countyFilter.innerHTML = '<option value="all" selected>All Counties</option>'; 
+    Object.keys(countyBounds).sort().forEach(county => {
+        const option = document.createElement('option');
+        option.value = county; option.textContent = county;
+        countyFilter.appendChild(option);
+    });
+    countyFilter.addEventListener('change', (e) => {
+        const selectedCounty = e.target.value;
+        if (selectedCounty === 'all') {
+            if (initialBounds) map.flyToBounds(initialBounds);
+        } else if (countyBounds[selectedCounty]) {
+            map.flyToBounds(countyBounds[selectedCounty], {
+                padding: [5,5],
+                maxZoom: 15
+            });
+        }
+    });
+
+    const facilityTypeFilter = document.getElementById('facility-type-filter');
+    facilityTypeFilter.addEventListener('change', (e) => {
+        const type = e.target.value;
+        const showControl = (type === 'all' || type === 'control');
+        const showIntervention = (type === 'all' || type === 'intervention');
+
+        map.hasLayer(facilityLayers.control) !== showControl && (showControl ? map.addLayer(facilityLayers.control) : map.removeLayer(facilityLayers.control));
+        map.hasLayer(facilityLayers.meeting_targets) !== showIntervention && (showIntervention ? map.addLayer(facilityLayers.meeting_targets) : map.removeLayer(facilityLayers.meeting_targets));
+        map.hasLayer(facilityLayers.at_risk) !== showIntervention && (showIntervention ? map.addLayer(facilityLayers.at_risk) : map.removeLayer(facilityLayers.at_risk));
+        map.hasLayer(facilityLayers.underperforming) !== showIntervention && (showIntervention ? map.addLayer(facilityLayers.underperforming) : map.removeLayer(facilityLayers.underperforming));
+    });
+
+    const searchBox = document.getElementById('map-search-box');
+    const resetButton = document.getElementById('reset-map-view-btn');
+    const fullscreenButton = document.getElementById('fullscreen-map-btn');
+    let searchMarker = null;
+
+    searchBox.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.trim().toLowerCase();
+        if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; map.closePopup(); }
+        if (searchTerm === '') return;
+        
+        const matched = facilitiesGeoJSON.features.find(f => f.properties.name.toLowerCase().includes(searchTerm));
+        if (matched) {
+            const coords = matched.geometry.coordinates;
+            const latLng = L.latLng(coords[1], coords[0]);
+            searchMarker = L.marker(latLng, { icon: L.divIcon({ className: 'search-result-marker', html: '<i class="mdi mdi-star-circle" style="font-size: 28px; color: #007bff;"></i>', iconSize: [28, 28], iconAnchor: [14, 28] }) }).addTo(map);
+            map.flyTo(latLng, 15);
+            const popupLayer = L.geoJSON(matched);
+            onEachFeature(matched, popupLayer);
+            searchMarker.bindPopup(popupLayer.getPopup()).openPopup();
+        }
+    });
+
+    resetButton.addEventListener('click', () => {
+        map.flyToBounds(initialBounds);
+        map.closePopup();
+        if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
+        
+        searchBox.value = '';
+        countyFilter.value = 'all';
+        facilityTypeFilter.value = 'all';
+        facilityTypeFilter.dispatchEvent(new Event('change'));
+        
+        legendControlItem.classList.add('active');
+        if (!map.hasLayer(facilityLayers.control)) map.addLayer(facilityLayers.control);
+        legendStatusItems.forEach(item => {
+            item.classList.add('active');
+            const status = item.getAttribute('data-status');
+            if (!map.hasLayer(facilityLayers[status])) map.addLayer(facilityLayers[status]);
+        });
+    });
+
+    fullscreenButton.addEventListener('click', () => {
+        const mapElement = map.getContainer().closest('.card');
+        if (!document.fullscreenElement) {
+            mapElement.requestFullscreen().catch(err => console.error(`Fullscreen error: ${err.message}`, err));
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        const icon = document.fullscreenElement ? 'mdi-fullscreen-exit' : 'mdi-fullscreen';
+        fullscreenButton.querySelector('i').className = `mdi ${icon}`;
+        setTimeout(() => map.invalidateSize({ animate: true }), 200);
+    });
+    
+    requestAnimationFrame(() => map.invalidateSize());
+  }
+
+  // ===================================================================
+  // MAIN INITIALIZATION LOGIC (RUNS WHEN THE PAGE IS LOADED)
+  // ===================================================================
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeTabEvents(); 
+    initializeOverviewMap();
+  });
+</script>
