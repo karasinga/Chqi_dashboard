@@ -340,3 +340,6 @@ tasks/
 
 *.md
 *.pem
+*.csv
+*.xlsx
+*.xls

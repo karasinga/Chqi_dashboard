@@ -1,0 +1,57 @@
+{% if error %}
+<div class="alert alert-danger"><h4>Error</h4><p>{{ error }}</p></div>
+{% elif no_data %}
+<div class="alert alert-warning">No facilities match the selected filters.</div>
+{% else %}
+<!-- Overall Analysis -->
+<div class="card mb-4">
+<div class="card-header"><h5>Overall Supply Chain & Equipment Status</h5></div>
+<div class="card-body">
+<div class="row">
+<div class="col-lg-6">{{ chart_procure_overall|safe }}</div>
+<div class="col-lg-6">{{ chart_equip_overall|safe }}</div>
+</div>
+</div>
+</div>
+
+<!-- Stratified by County (No change) -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>Stratified Analysis by County</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">{{ chart_procure_by_county|safe }}</div>
+                <div class="col-lg-6">{{ chart_equip_by_county|safe }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================================== -->
+    <!-- START OF THE NEW CODE: Display the new chart sections           -->
+    <!-- =============================================================== -->
+
+    <!-- Stratified by KEPH Level -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>Stratified Analysis by KEPH Level</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">{{ chart_procure_by_level|safe }}</div>
+                <div class="col-lg-6">{{ chart_equip_by_level|safe }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stratified by Ownership -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>Stratified Analysis by Ownership</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">{{ chart_procure_by_ownership|safe }}</div>
+                <div class="col-lg-6">{{ chart_equip_by_ownership|safe }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================================== -->
+    <!-- END OF THE NEW CODE                                             -->
+    <!-- =============================================================== -->
+{% endif %}

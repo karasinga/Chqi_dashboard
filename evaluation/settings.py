@@ -145,10 +145,12 @@ if not DEBUG:
         }
     }
 else:
+    import tempfile
+    db_path = os.path.join(tempfile.gettempdir(), 'chqi_db.sqlite3')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'db.sqlite3',
+            'NAME': db_path,
         }
     }
 

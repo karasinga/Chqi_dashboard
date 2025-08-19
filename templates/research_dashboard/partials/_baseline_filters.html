@@ -1,0 +1,117 @@
+<style>
+.filter-label-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem; /* Replaces default label margin */
+}
+
+.filter-label-container .form-label {
+    margin-bottom: 0; /* Remove margin from the label itself */
+}
+
+.filter-label-container .btn-link {
+    text-decoration: none;
+    font-weight: 400; /* Lighter font weight for a subtle look */
+}
+
+.filter-label-container .btn-link:hover {
+    text-decoration: underline;
+}
+</style>
+
+<!--  _baseline_filters.html -->
+<div class="card mb-2">
+    <div class="card-body bg-light p-3">
+        <form id="baseline-filters"
+              hx-get="{% url 'project_baseline' project.id %}?tab={{ current_sub_view }}"
+              hx-target="#project-content"
+              hx-trigger="change"
+              hx-swap="innerHTML">
+
+            <div class="row align-items-end g-3">
+                
+                <div class="col-md-3">
+                    <div class="filter-label-container">
+                        <label for="county-filter" class="form-label fw-bold">County</label>
+                        <button type="button" class="btn btn-link btn-sm p-0" onclick="resetFilterToAll('county-filter')">Reset</button>
+                    </div>
+                    <!-- ADD THE NEW CLASS HERE -->
+                    <select name="county" id="county-filter" class="form-select tom-select-multiple" multiple>
+                        {% for item in distinct_counties %}<option value="{{ item }}" {% if item in selected_counties %}selected{% endif %}>{{ item }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="filter-label-container">
+                        <label for="level-filter" class="form-label fw-bold">KEPH Level</label>
+                        <button type="button" class="btn btn-link btn-sm p-0" onclick="resetFilterToAll('level-filter')">Reset</button>
+                    </div>
+                     <!-- ADD THE NEW CLASS HERE -->
+                    <select name="level" id="level-filter" class="form-select tom-select-multiple" multiple>
+                        {% for item in distinct_levels %}<option value="{{ item }}" {% if item in selected_levels %}selected{% endif %}>{{ item }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="filter-label-container">
+                        <label for="ownership-filter" class="form-label fw-bold">Ownership</label>
+                         <button type="button" class="btn btn-link btn-sm p-0" onclick="resetFilterToAll('ownership-filter')">Reset</button>
+                    </div>
+                     <!-- ADD THE NEW CLASS HERE -->
+                    <select name="ownership" id="ownership-filter" class="form-select tom-select-multiple" multiple>
+                         {% for item in distinct_owners %}<option value="{{ item }}" {% if item in selected_owners %}selected{% endif %}>{{ item }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="resetAllFilters(this)">Reset All Filters</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+    /**
+     * Resets a SINGLE filter to select all its options.
+     */
+    function resetFilterToAll(selectId) {
+        const selectElement = document.getElementById(selectId);
+        if (!selectElement) return;
+
+        for (let i = 0; i < selectElement.options.length; i++) {
+            selectElement.options[i].selected = true;
+        }
+
+        // Trigger the HTMX request
+        const event = new Event('change', { 'bubbles': true });
+        selectElement.dispatchEvent(event);
+    }
+
+    /**
+     * Resets ALL filters in the form to select all their options.
+     */
+    function resetAllFilters(buttonElement) {
+        // Find the form that this button belongs to
+        const form = buttonElement.closest('form');
+        if (!form) return;
+
+        // Find all multi-select elements within this form
+        const allSelects = form.querySelectorAll('select[multiple]');
+        
+        // Loop through each select element and select all its options
+        allSelects.forEach(selectElement => {
+            for (let i = 0; i < selectElement.options.length; i++) {
+                selectElement.options[i].selected = true;
+            }
+        });
+
+        // Trigger the HTMX request ONCE after all changes are made
+        if (allSelects.length > 0) {
+            const event = new Event('change', { 'bubbles': true });
+            allSelects[0].dispatchEvent(event); // Trigger on the first select
+        }
+    }
+</script>

@@ -1,0 +1,34 @@
+{% if error %}
+<div class="alert alert-danger">
+  <h4>Error</h4>
+  <p>{{ error }}</p>
+</div>
+{% elif no_data %}
+<div class="alert alert-warning">No facilities match the selected filters.</div>
+{% else %}
+
+<!-- Top Row: Overall and By County -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row">
+      <!-- Left Column: Overall Chart -->
+      <div class="col-lg-6">{{ chart_governance_overall|safe }}</div>
+      <!-- Right Column: Stratified by County Chart -->
+      <div class="col-lg-6">{{ chart_governance_by_county|safe }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Row: By Level and By Ownership -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row">
+      <!-- Left Column: Stratified by Level Chart -->
+      <div class="col-lg-6">{{ chart_governance_by_level|safe }}</div>
+      <!-- Right Column: Stratified by Ownership Chart -->
+      <div class="col-lg-6">{{ chart_governance_by_ownership|safe }}</div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
