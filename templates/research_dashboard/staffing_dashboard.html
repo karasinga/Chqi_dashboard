@@ -1,0 +1,66 @@
+<!-- research_dashboard/staffing_dashboard.html -->
+<!-- {% extends "research_dashboard/base.html" %}  -->
+
+<!-- {% block content %} -->
+<div class="container-fluid mt-4">
+
+    <h2>Human Resource for Health (Staff Profile)</h2>
+
+    <!-- Filter Section (HTMX Form) -->
+    <div class="card mb-4">
+        <div class="card-body bg-light p-3">
+            <form id="staffing-filters" 
+                  hx-get="{% url 'project_baseline' project.id %}" 
+                  hx-trigger="change" 
+                  hx-target="#staffing-charts-container"
+                  hx-indicator="#loading-spinner"
+                  hx-swap="innerHTML">
+                <div class="row align-items-end g-3">
+                    <div class="col-md-3">
+                        <label for="county-filter" class="form-label fw-bold">County</label>
+                        <select name="county" id="county-filter" class="form-select" multiple>
+                            {% for item in distinct_counties %}<option value="{{ item }}" {% if item in selected_counties %}selected{% endif %}>{{ item }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="level-filter" class="form-label fw-bold">KEPH Level</label>
+                        <select name="level" id="level-filter" class="form-select" multiple>
+                            {% for item in distinct_levels %}<option value="{{ item }}" {% if item in selected_levels %}selected{% endif %}>{{ item }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="ownership-filter" class="form-label fw-bold">Ownership</label>
+                        <select name="ownership" id="ownership-filter" class="form-select" multiple>
+                             {% for item in distinct_owners %}<option value="{{ item }}" {% if item in selected_owners %}selected{% endif %}>{{ item }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <span id="loading-spinner" class="htmx-indicator spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Container for Charts (HTMX target) -->
+    <div id="staffing-charts-container">
+        {% include 'research_dashboard/partials/staffing_charts.html' %}
+    </div>
+
+</div>
+
+<!-- HTMX and TomSelect initialization (assuming in base.html or a dedicated JS file) -->
+<script>
+    function initializeTomSelect() {
+        if (typeof TomSelect !== 'undefined') {
+            document.querySelectorAll('select[multiple]').forEach(select => {
+                if (!select.tomselect) {
+                    new TomSelect(select, {plugins: ['remove_button']});
+                }
+            });
+        }
+    }
+    document.addEventListener('DOMContentLoaded', initializeTomSelect);
+    document.body.addEventListener('htmx:afterSwap', initializeTomSelect);
+</script>
+<!-- {% endblock %} -->

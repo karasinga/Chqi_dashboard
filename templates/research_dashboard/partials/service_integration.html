@@ -1,0 +1,40 @@
+<div class="container-fluid mt-2">
+    <!-- Filter Form (This is the same shared filter form, so it will appear on this tab too) -->
+    <!-- Include the shared filter form -->
+    {% include 'research_dashboard/partials/_baseline_filters.html' %}
+
+    <!-- Chart Container -->
+    {% if error %}
+        <div class="alert alert-danger">
+            <h4>Error</h4>
+            <p>{{ error }}</p>
+        </div>
+    {% elif no_data %}
+        <div class="alert alert-warning">No facilities match the selected filters.</div>
+    {% else %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Service Integration Model Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-12 mb-4">
+                        <div class="chart-container">
+                            {{ chart_model_by_county|safe }}
+                        </div>
+                </div>
+                <div class="col-lg-12 mb-4">
+                    <div class="chart-container">
+                        {{ chart_model_by_ownership|safe }}
+                    </div>
+                </div>
+                <div class="col-lg-12 mb-4">
+                    <div class="chart-container">
+                        {{ chart_model_by_level|safe }}
+                    </div>
+                </div>               
+            </div>
+            </div>
+        </div>
+    {% endif %}
+</div>

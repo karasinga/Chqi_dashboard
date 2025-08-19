@@ -1,0 +1,75 @@
+<!-- research_dashboard/partials/staffing_charts.html (Final Polished Layout) -->
+
+{% if error %}
+    <div class="alert alert-danger">
+        <h4>Error Generating Charts</h4>
+        <pre>{{ error }}</pre>
+        <p class="small text-muted">Check the server logs for more details.</p>
+    </div>
+{% elif no_data %}
+    <div class="alert alert-warning">No facilities match the selected filters. Please broaden your selection.</div>
+{% else %}
+    <!-- Overall Performance Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Overall Staffing Performance</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        {{ chart_total_staff|safe }}
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        {{ chart_avg_staff|safe }}
+                    </div>
+                </div>
+                <div class="col-lg-12 mb-4">
+                    <div class="chart-container">
+                        {{ chart_count_by_county|safe }}
+                    </div>
+                </div>
+            </div>
+            <p class="mt-3 alert alert-secondary">
+                <strong>Insight:</strong> These charts show the absolute number and per-facility average for key clinical cadres based on your current filter selection. Nurses and Clinical Officers form the backbone of the workforce.
+            </p>
+        </div>
+    </div>
+
+    <!-- Stratified Analysis Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Stratified Staffing Analysis (Averages per Facility)</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-12 mb-4">
+                    <div class="chart-container">
+                        {{ chart_by_county|safe }}
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-lg-12 mb-4">
+                    <div class="chart-container">
+                        {{ chart_by_level|safe }}
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="chart-container">
+                        {{ chart_by_ownership|safe }}
+                    </div>
+                </div>
+            </div>
+             <p class="mt-3 alert alert-secondary">
+                <strong>Insight:</strong> Stratifying the data reveals key differences. Note the significant increase in specialized staff at Level 4 facilities and the distinct staffing profiles of facilities under different ownership.
+            </p>
+        </div>
+    </div>
+{% endif %}

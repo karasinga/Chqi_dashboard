@@ -1,0 +1,26 @@
+<!-- research_dashboard/partials/facility_profile_charts.html -->
+{% if error %}
+    <div class="alert alert-danger">
+        <h4>Error Generating Charts</h4>
+        <p>{{ error }}</p>
+    </div>
+{% elif no_data %}
+    <div class="alert alert-warning">No facilities match the selected filters. Please broaden your selection.</div>
+{% else %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-4">
+                    {{ chart_county|safe }}
+                </div>
+                <div class="col-lg-4">
+                    {{ chart_level|safe }}
+                </div>
+                <div class="col-lg-4">
+                    {{ chart_ownership|safe }}
+                </div>
+            </div>
+            <!-- Add other chart rows here -->
+        </div>
+    </div>
+{% endif %}

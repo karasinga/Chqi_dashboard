@@ -1,0 +1,27 @@
+{% if error %}
+    <div class="alert alert-danger"><h4>Error</h4><p>{{ error }}</p></div>
+{% elif no_data %}
+    <div class="alert alert-warning">No facilities match the selected filters.</div>
+{% else %}
+    <!-- Analysis Cards -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>Median Annual Expenditure by County</h5></div>
+        <div class="card-body">
+            {{ chart_financing_by_county|safe }}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><h5>Median Annual Expenditure by KEPH Level</h5></div>
+        <div class="card-body">
+            {{ chart_financing_by_level|safe }}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><h5>Median Annual Expenditure by Ownership</h5></div>
+        <div class="card-body">
+            {{ chart_financing_by_ownership|safe }}
+        </div>
+    </div>
+{% endif %}

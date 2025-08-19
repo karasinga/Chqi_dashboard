@@ -5,7 +5,7 @@ from .views import EvaluatorDeleteView, EvaluationView, EvaluationDetailView, Ev
 from .views import update_phase_status, update_milestone_status, update_timeline_order
 from .views import ProjectServiceDeliveryView, ProjectHealthProductsTechnologiesView, ProjectHumanResourceForHealthView
 from .views import ProjectHealthInfoSystemsView, ProjectHealthFinancingView, ProjectDataQualityView
-from .views import ProjectLeadershipGovernanceView, county_boundaries_api
+from .views import ProjectLeadershipGovernanceView, ProjectBaselineView, county_boundaries_api
 from django.contrib.auth.views import LogoutView  # Add logout view
 
 urlpatterns = [
@@ -25,6 +25,8 @@ urlpatterns = [
     path('project/<int:project_id>/health_financing/', ProjectHealthFinancingView.as_view(), name='project_health_financing'),
     path('project/<int:project_id>/leadership_governance/', ProjectLeadershipGovernanceView.as_view(), name='project_leadership_governance'),
     path('project/<int:project_id>/data_quality/', ProjectDataQualityView.as_view(), name='project_data_quality'),
+    path('project/<int:project_id>/baseline/', ProjectBaselineView.as_view(), name='project_baseline'),
+#     path('project/<int:project_id>/staff_profile/', StaffingDashboardView.as_view(), name='staffing_dashboard'),
     path('project/<int:project_id>/download/<int:document_id>/', 
          ProjectOverviewView.as_view(), name='download_document'),
     path('project/<int:project_id>/upload_document/', 

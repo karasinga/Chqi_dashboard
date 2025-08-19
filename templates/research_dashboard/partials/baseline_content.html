@@ -1,0 +1,115 @@
+<style>
+/* Target the sub-navigation container */
+#baseline-sub-nav .nav-tabs {
+    border-bottom: 1px solid #dee2e6; /* A subtle line for the whole bar */
+}
+
+/* Style for each link in the sub-nav */
+#baseline-sub-nav .nav-tabs .nav-link {
+    border: none; /* Remove all default borders from the tab links */
+    border-bottom: 3px solid transparent; /* Add a transparent bottom border to prevent "jumping" on hover/active */
+    color: #6c757d; /* A muted color for inactive links */
+    font-size: 0.95rem;
+    padding-left: 0;
+    padding-right: 1.5rem; /* Add some spacing between items */
+    margin-bottom: -1px; /* Align with the main border */
+}
+
+/* Style for the link on hover */
+#baseline-sub-nav .nav-tabs .nav-link:hover {
+    color: #0d6efd; /* Change text color on hover */
+    border-bottom-color: #e9ecef; /* A very light hover indicator */
+}
+
+/* Style for the currently ACTIVE link */
+#baseline-sub-nav .nav-tabs .nav-link.active {
+    background-color: transparent; /* Remove any background color */
+    color: #0d6efd; /* Use the primary color for the text */
+    font-weight: 500; /* Make the active link text slightly bolder */
+    border-bottom: 3px solid #f50dfd; /* The key active indicator line */
+}
+</style>
+
+<div id="baseline-sub-nav">
+    <ul class="nav nav-tabs" id="baseline-sub-nav-tabs" role="tablist">
+        
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if current_sub_view == 'facility_profile' %}active{% endif %}"
+               hx-get="{% url 'project_baseline' project.id %}?tab=facility_profile"
+               hx-target="#project-content" hx-swap="innerHTML">
+                Facility Profile
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if current_sub_view == 'staff_profile' %}active{% endif %}"
+               hx-get="{% url 'project_baseline' project.id %}?tab=staff_profile"
+               hx-target="#project-content" hx-swap="innerHTML">
+                Staff Profile
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if current_sub_view == 'service_integration' %}active{% endif %}"
+               hx-get="{% url 'project_baseline' project.id %}?tab=service_integration"
+               hx-target="#project-content" hx-swap="innerHTML">
+                Service Integration
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+        <a class="nav-link {% if current_sub_view == 'patient_load' %}active{% endif %}"
+           hx-get="{% url 'project_baseline' project.id %}?tab=patient_load"
+           hx-target="#project-content" hx-swap="innerHTML">
+            Patient Load
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if current_sub_view == 'his' %}active{% endif %}"
+           hx-get="{% url 'project_baseline' project.id %}?tab=his"
+           hx-target="#project-content" hx-swap="innerHTML">
+            Health Information Systems
+        </a>
+    </li> 
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if current_sub_view == 'supply_chain' %}active{% endif %}"
+           hx-get="{% url 'project_baseline' project.id %}?tab=supply_chain"
+           hx-target="#project-content" hx-swap="innerHTML">
+            Supply Chain & Products
+        </a>
+    </li> 
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if current_sub_view == 'governance' %}active{% endif %}"
+           hx-get="{% url 'project_baseline' project.id %}?tab=governance"
+           hx-target="#project-content" hx-swap="innerHTML">
+            Governance & Challenges
+        </a>
+    </li>  
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if current_sub_view == 'system_financing' %}active{% endif %}"
+           hx-get="{% url 'project_baseline' project.id %}?tab=system_financing"
+           hx-target="#project-content" hx-swap="innerHTML">
+            System Financing
+        </a>
+    </li>     
+    </ul>
+
+    <div class="tab-content pt-3" id="baseline-sub-nav-tab-content">
+        <div class="tab-pane fade show active" id="dynamic-tab-content">
+            {% if current_sub_view == 'facility_profile' %}
+                {% include 'research_dashboard/partials/facility_profile.html' %}
+            {% elif current_sub_view == 'staff_profile' %}
+                {% include 'research_dashboard/partials/staff_profile.html' %}          
+            {% elif current_sub_view == 'service_integration' %}
+                {% include 'research_dashboard/partials/service_integration.html' %}
+            {% elif current_sub_view == 'patient_load' %}
+                {% include 'research_dashboard/partials/patient_load.html' %}
+            {% elif current_sub_view == 'his' %}
+                {% include 'research_dashboard/partials/his.html' %}
+            {% elif current_sub_view == 'supply_chain' %}
+                {% include 'research_dashboard/partials/supply_chain.html' %}
+            {% elif current_sub_view == 'governance' %}
+                {% include 'research_dashboard/partials/governance.html' %}
+            {% elif current_sub_view == 'system_financing' %}
+                {% include 'research_dashboard/partials/system_financing.html' %}        
+            {% endif %}
+        </div>
+    </div>
+</div>

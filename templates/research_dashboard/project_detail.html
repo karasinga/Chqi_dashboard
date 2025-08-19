@@ -18,6 +18,10 @@
             {% include 'research_dashboard/partials/overview_content.html' %}
         {% elif current_view == 'timeline' %}
             {% include 'research_dashboard/partials/timeline_content.html' %}
+        {% elif current_view == 'baseline' %}
+            <div id="baseline-wrapper">
+                {% include 'research_dashboard/partials/baseline_content.html' %}
+            </div>
         {% elif current_view == 'hiv_services' %}
             {% include 'research_dashboard/partials/hiv_services_content.html' %}
         {% elif current_view == 'ncd_services' %}

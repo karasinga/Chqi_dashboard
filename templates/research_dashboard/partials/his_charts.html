@@ -1,0 +1,76 @@
+{% if error %}
+    <div class="alert alert-danger">
+        <h4>Error Generating Charts</h4>
+        <p>{{ error }}</p>
+    </div>
+{% elif no_data %}
+    <div class="alert alert-warning">No facilities match the selected filters. Please broaden your selection.</div>
+{% else %}
+    <!-- Overall Performance Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Overall HIS Usage</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    {{ chart_hiv_overall|safe }}
+                </div>
+                <div class="col-lg-6">
+                    {{ chart_ncd_overall|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stratified Analysis Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Stratified HIS Analysis by County</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    {{ chart_hiv_by_county|safe }}
+                </div>
+                <div class="col-lg-6">
+                    {{ chart_ncd_by_county|safe }}
+                </div>
+            </div>
+        </div>
+    
+    <!-- Stratified by KEPH Level Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Stratified HIS Analysis by KEPH Level</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    {{ chart_hiv_by_level|safe }}
+                </div>
+                <div class="col-lg-6">
+                    {{ chart_ncd_by_level|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stratified by Ownership Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Stratified HIS Analysis by Ownership</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    {{ chart_hiv_by_ownership|safe }}
+                </div>
+                <div class="col-lg-6">
+                    {{ chart_ncd_by_ownership|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+{% endif %}
