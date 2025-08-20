@@ -56,7 +56,11 @@ def load_and_clean_data(filepath=r"redcap_baseline_complete.csv"):
         
     numerical_cols_to_impute = [col for col in all_patient_cols if df[col].isnull().any()]
     for col in numerical_cols_to_impute:
-        median_value = df[col].median()
+        # Check if column has any non-NaN values
+        if not df[col].dropna().empty:
+            median_value = df[col].median()
+        else:
+            median_value = 0
         df[col] = df[col].fillna(median_value)
     
     # print("--- Data Cleaning Logic Complete ---")

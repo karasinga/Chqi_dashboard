@@ -1051,7 +1051,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             selected_counties = all_distinct_counties
 
         # 2. Create a temporary DataFrame filtered ONLY by the selected counties.
-        county_filtered_df = df[df['county'].isin(selected_counties)]
+        county_filtered_df = df[df['county'].isin(selected_counties)].copy()
 
         # 3. Get the distinct levels and owners FROM the county-filtered data.
         distinct_levels = sorted(county_filtered_df['level'].unique().tolist())
@@ -1203,7 +1203,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             # Average staff per facility
             average_staff = filtered_df[key_staff_columns].mean().sort_values(ascending=False).reset_index()
             average_staff.columns = ['Staff Cadre', 'Average Count']
-            average_staff['Staff Cadre'] = average_staff['Staff Cadre'].apply(clean_column_names)
+            average_staff['Staff Cadre'] = average_staff['Staff Cadre'].apply(clean_column_names).copy()
             fig_avg_staff = px.bar(
                 average_staff, 
                 x='Staff Cadre', 
@@ -1540,13 +1540,14 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             total_counts_per_facility = pd.DataFrame()
             for condition_name, cols in conditions.items():
                 if cols:
-                    total_counts_per_facility[condition_name] = filtered_df[cols].sum(axis=1)
+                    total_counts_per_facility.loc[:, condition_name] = filtered_df[cols].sum(axis=1)
             
-            # Add the county back in for grouping
-            total_counts_per_facility['county'] = filtered_df['county']
+            # Add the county back in for grouping - create a new DataFrame to avoid SettingWithCopyWarning
+            total_counts_with_county = total_counts_per_facility.copy()
+            total_counts_with_county['county'] = filtered_df['county'].values
             
             # Step 2: Now, group by county and SUM these totals.
-            absolute_counts_by_county = total_counts_per_facility.groupby('county')[cols_for_viz].sum().reset_index()
+            absolute_counts_by_county = total_counts_with_county.groupby('county')[cols_for_viz].sum().reset_index()
             
             # Step 3: Melt the data for plotting.
             df_melted_abs = pd.melt(absolute_counts_by_county, id_vars='county', var_name='Condition', value_name='Total Annual Visits')
@@ -1602,6 +1603,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             trend_data_subset = monthly_trends[monthly_trends['Condition'].isin(conditions_to_plot)]
             
             # Add a formatted text column for clean labels on the chart
+            trend_data_subset = trend_data_subset.copy()
             trend_data_subset['visits_text'] = trend_data_subset['visits'].apply(lambda x: f'{x:,.0f}')
 
             fig_monthly_trend = px.line(
@@ -1824,7 +1826,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             
             # Procurement long form
             df_procure_long = filtered_df.melt(id_vars=id_vars_for_melt, value_vars=procure_cols, var_name='source_col', value_name='value')
-            df_procure_checked = df_procure_long[df_procure_long['value'] == 'Checked']
+            df_procure_checked = df_procure_long[df_procure_long['value'] == 'Checked'].copy()
             df_procure_checked['Procurement Source'] = df_procure_checked['source_col'].map(source_map)
 
             # Equipment long form
