@@ -950,132 +950,6 @@ class ProjectDataQualityView(View):
             return render(request, 'research_dashboard/partials/data_quality_content.html', context)
         return render(request, self.template_name, context)
 
-# class ProjectBaselineView(View):
-#     template_name = 'research_dashboard/project_detail.html'
-#     baseline_content_template = 'research_dashboard/partials/baseline_content.html'
-
-#     def get(self, request, *args, **kwargs):
-#         project_id = kwargs.get('project_id')
-#         project = get_object_or_404(ResearchProject, pk=project_id)
-
-#         context = {
-#             'project': project,
-#             'current_view': 'baseline',
-#             'current_sub_view': request.GET.get('sub_view', 'facility_profile'),
-#             'distinct_counties': [],
-#             'distinct_levels': [],
-#             'distinct_owners': [],
-#             'selected_counties': [],
-#             'selected_levels': [],
-#             'selected_owners': [],
-#             'chart_county': '',
-#             'chart_level': '',
-#             'chart_ownership': '',
-#             'chart_staff_by_level': '',
-#             'chart_patient_heatmap': '',
-#             'chart_his_hiv': '',
-#             'chart_his_ncd': '',
-#             'chart_infra_challenges': '',
-#             'chart_finance': '',
-#         }
-
-#         # Check cache first for charts and distinct values
-#         cache_key = f'baseline_charts_{project_id}'
-#         cached_data = cache.get(cache_key)
-#         if cached_data:
-#             context.update(cached_data)
-#         else:
-#             try:
-#                 df, df_with_averages = get_baseline_data_with_averages()
-
-#                 distinct_counties = sorted(df['county'].unique().tolist())
-#                 distinct_levels = sorted(df['level'].unique().tolist())
-#                 distinct_owners = sorted(df['ownership'].unique().tolist())
-
-#                 # Get selected filters from request, default to all if not present
-#                 context['selected_counties'] = request.GET.getlist('county', distinct_counties)
-#                 context['selected_levels'] = request.GET.getlist('level', distinct_levels)
-#                 context['selected_owners'] = request.GET.getlist('ownership', distinct_owners)
-
-#                 # --- Chart Generation (using filtered_df if filters are applied) ---
-#                 # For simplicity, initial charts are generated from the full df.
-#                 # If filtering is needed here, apply filters to df first.
-#                 filtered_df = df # df[df['county'].isin(context['selected_counties']) & ...]
-
-#                 county_counts = filtered_df['county'].value_counts().reset_index()
-#                 level_counts = filtered_df['level'].value_counts().reset_index()
-#                 ownership_counts = filtered_df['ownership'].value_counts().reset_index()
-
-                # fig1_county = px.bar(county_counts, x='county', y='count', color='county', title='Distribution by County', text_auto=True)
-                # fig1_level = px.bar(level_counts, x='level', y='count', color='level', title='Distribution by KEPH Level', text_auto=True, category_orders={'level': level_counts['level'].tolist()})
-                # fig1_ownership = px.bar(ownership_counts, x='ownership', y='count', color='ownership', title='Distribution by Ownership', text_auto=True, category_orders={'ownership': ownership_counts['ownership'].tolist()})
-
-#                 fig1_county.update_xaxes(title_text=None); fig1_level.update_xaxes(title_text=None); fig1_ownership.update_xaxes(title_text=None)
-#                 fig1_county.update_layout(showlegend=False); fig1_level.update_layout(showlegend=False); fig1_ownership.update_layout(showlegend=False)
-                
-#                 key_staff_columns = ['employed_nurse', 'employed_co', 'employed_lab_tech', 'employed_doc', 'employed_hts_counsellors', 'employed_pharmaceutical', 'employed_nutritionist', 'employed_pharmacist']
-#                 avg_staff_by_level = filtered_df.groupby('level')[key_staff_columns].mean().reset_index()
-#                 df_melted_level = pd.melt(avg_staff_by_level, id_vars='level', var_name='Staff Cadre', value_name='Average Number of Staff')
-#                 fig3_staff_by_level = px.bar(df_melted_level, x='Staff Cadre', y='Average Number of Staff', color='level', title='Average Staffing by KEPH Level', barmode='group', text_auto='.2f', category_orders={"Staff Cadre": key_staff_columns})
-
-#                 cols_for_heatmap = ['HIV', 'Diabetes', 'Hypertension', 'DM + HTN', 'HIV + DM', 'HIV + HTN', 'HIV + HTN + DM']
-#                 patient_load_by_level_total = df_with_averages.groupby('level')[cols_for_heatmap].sum().round(0)
-#                 fig6_patient_heatmap = px.imshow(patient_load_by_level_total, text_auto=True, aspect="auto", title="Total Monthly Patient Volume by KEPH Level")
-
-#                 his_hiv_counts = filtered_df['his_hiv'].value_counts().reset_index()
-#                 fig7_hiv = px.bar(his_hiv_counts, y='his_hiv', x='count', title='HIS for HIV Services', text_auto=True, orientation='h')
-#                 his_ncd_counts = filtered_df['his_ncd'].value_counts().reset_index()
-#                 fig7_ncd = px.bar(his_ncd_counts, y='his_ncd', x='count', title='HIS for NCD Services', text_auto=True, orientation='h')
-                
-#                 consult_challenge_cols = [c for c in filtered_df.columns if 'consult_rooms_challenge' in c]
-#                 df_consult_long = pd.melt(filtered_df[['county'] + consult_challenge_cols], id_vars=['county'], value_vars=consult_challenge_cols).query("value=='Checked'")
-#                 consult_map = {'consult_rooms_challenge___1': 'Inadequate Number', 'consult_rooms_challenge___2': 'Poor Condition', 'consult_rooms_challenge___3': 'Lack of Privacy', 'consult_rooms_challenge___4': 'Poor Lighting/Ventilation', 'consult_rooms_challenge___5': 'Other'}
-#                 df_consult_long['Challenge'] = df_consult_long['variable'].map(consult_map)
-#                 consult_counts = df_consult_long.groupby(['Challenge', 'county']).size().reset_index(name='count')
-#                 fig8_infra = px.bar(consult_counts, y='Challenge', x='count', color='county', title='Consultation Room Challenges by County', barmode='group', text_auto=True, orientation='h').update_yaxes(categoryorder="total ascending")
-                
-#                 expenditure_cols = {'Total Expenditure': 'total_expenditure_year', 'HIV Expenditure': 'total_expenditure_hiv', 'NCD Expenditure': 'total_expenditure_ncd'}
-#                 median_exp_ownership = filtered_df.groupby('ownership')[list(expenditure_cols.values())].median().reset_index()
-#                 df_melted_ownership = pd.melt(median_exp_ownership, id_vars='ownership', var_name='Expenditure Type', value_name='Median Annual Expenditure (KES)')
-#                 df_melted_ownership['Expenditure Type'] = df_melted_ownership['Expenditure Type'].map({v: k for k, v in expenditure_cols.items()})
-#                 fig11_finance = px.bar(df_melted_ownership, x='ownership', y='Median Annual Expenditure (KES)', color='Expenditure Type', title='Median Annual Expenditure by Ownership', barmode='group', text_auto=',.0f')
-
-#                 context.update({
-#                     'distinct_counties': distinct_counties, 'distinct_levels': distinct_levels, 'distinct_owners': distinct_owners,
-#                     'chart_county': pio.to_html(fig1_county, full_html=False, include_plotlyjs='cdn'),
-#                     'chart_level': pio.to_html(fig1_level, full_html=False),
-#                     'chart_ownership': pio.to_html(fig1_ownership, full_html=False),
-#                     'chart_staff_by_level': pio.to_html(fig3_staff_by_level, full_html=False),
-#                     'chart_patient_heatmap': pio.to_html(fig6_patient_heatmap, full_html=False),
-#                     'chart_his_hiv': pio.to_html(fig7_hiv, full_html=False),
-#                     'chart_his_ncd': pio.to_html(fig7_ncd, full_html=False),
-#                     'chart_infra_challenges': pio.to_html(fig8_infra, full_html=False),
-#                     'chart_finance': pio.to_html(fig11_finance, full_html=False)
-#                 })
-#                 cache.set(cache_key, context.copy(), 3600)
-#             except Exception as e:
-#                 import traceback
-#                 context['error'] = f"An error occurred: {str(e)}\n{traceback.format_exc()}"
-#                 # Ensure distinct values are set even on error to prevent template issues
-#                 if not context['distinct_counties']: # If caching failed and data loading also failed
-#                     context['distinct_counties'] = []
-#                     context['distinct_levels'] = []
-#                     context['distinct_owners'] = []
-#         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-#             # For HTMX, render the baseline_content.html with the current_sub_view context
-#             return render(request, self.baseline_content_template, context)
-#         # For full page load, render the main project_detail.html
-#         # The baseline_content.html will be loaded into the #baseline-content-pane via HTMX or JS
-#         return render(request, self.template_name, context)
-
-#     def _render_response(self, request, context):
-#         """Render response based on request type"""
-#         if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-#             return render(request, self.baseline_content_template, context)
-        
-#         # For a full page load, render the main page.
-#         return render(request, self.template_name, context)
-
 
 import logging
 import pandas as pd
@@ -1216,13 +1090,15 @@ class ProjectBaselineView(LoginRequiredMixin, View):
         Returns a consistent chart layout for all charts
         """
         return {
-            'height':500,
-            'template': 'plotly_white',
-            'title': {'x': 0.5, 'xanchor': 'center', 'font': {'size': 16, 'family': 'Arial, sans-serif'}},
-            'legend': {'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02, 'xanchor': 'right', 'x': 1},
-            'margin': {'l': 40, 'r': 20, 't': 80, 'b': 20},
-            'xaxis': {'title': None, 'tickangle': -45},
-            'yaxis': {'title': 'Count'},
+        'height': 450,
+        'template': 'plotly_white',
+        'plot_bgcolor': '#f8fafc',
+
+        'title': {'x': 0.5, 'xanchor': 'center', 'font': {'size': 16, 'family': 'Arial, sans-serif'}},
+        'legend': {'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02, 'xanchor': 'right', 'x': 1},
+        'margin': {'l': 40, 'r': 20, 't': 80, 'b': 20},
+        'xaxis': {'title': None, 'automargin': True },
+        'yaxis': {'title': 'Count','automargin': True},
         }
     
     def get_facility_profile_context(self, request, context):
@@ -1540,7 +1416,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             fig_model_by_level.update_layout(
                 chart_layout, 
                 height=500, # Give it a bit more height for readability
-                legend_title_text='Ownership', 
+                legend_title_text='KEPH Level', 
                 yaxis_title='Service Delivery Model', 
                 xaxis_title='Number of Facilities'
             ).update_yaxes(categoryorder="total ascending")
@@ -1583,7 +1459,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             # --- Data Preparation (as in your notebook) ---
             conditions = {
                 'HIV': [col for col in df.columns if col.startswith('hiv_') and '_dm' not in col and '_htn' not in col],
-                'Diabetes': [col for col in df.columns if col.startswith('diabetes_')],
+                'DM': [col for col in df.columns if col.startswith('diabetes_')],
                 'Hypertension': [col for col in df.columns if col.startswith('htn_') and 'dm_htn' not in col],
                 'DM + HTN': [col for col in df.columns if 'dm_htn' in col],
                 'HIV + DM': [col for col in df.columns if 'hiv_dm' in col],
@@ -1601,7 +1477,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             
             annual_visits_df = pd.DataFrame(annual_visits_list).sort_values('Total Annual Visits (All Facilities)', ascending=False)
             
-            print(annual_visits_df.head(1))
+            # print(annual_visits_df.head(1))
             fig_total_annual = px.bar(
                 annual_visits_df,
                 y='Condition',
@@ -1700,7 +1576,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             # ===============================================================
             conditions = {
                 'HIV Only': [col for col in df.columns if col.startswith('hiv_') and '_dm' not in col and '_htn' not in col],
-                'Diabetes Only': [col for col in df.columns if col.startswith('diabetes_')],
+                'DM Only': [col for col in df.columns if col.startswith('diabetes_')],
                 'Hypertension Only': [col for col in df.columns if col.startswith('htn_') and 'dm_htn' not in col],
                 'DM+HTN': [col for col in df.columns if col.startswith('dm_htn')],
                 'HIV+DM': [col for col in df.columns if col.startswith('hiv_dm')],
@@ -1963,7 +1839,10 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             fig_procure_overall.update_layout(chart_layout, xaxis_title='Number of Facilities', yaxis_title='Source').update_yaxes(categoryorder="total ascending")
 
             equip_counts = df_equip_long.groupby(['Equipment Label', 'Status']).size().reset_index(name='count')
-            fig_equip_overall = px.bar(equip_counts, x='Equipment Label', y='count', color='Status', barmode='stack', title='Availability of Basic Diagnostic Equipment', text_auto=True)
+            status_color_map = {'available in use': 'green','available not in use': 'blue','not available': 'red'}
+            fig_equip_overall = px.bar(equip_counts, x='Equipment Label', y='count', color='Status', barmode='stack',
+                                        title='Availability of Basic Diagnostic Equipment', text_auto=True,
+                                        color_discrete_map=status_color_map)
             fig_equip_overall.update_layout(chart_layout, xaxis_title=None, yaxis_title='Number of Facilities').update_traces(textfont_color='white')
 
             # --- Stratified by County ---
@@ -1971,7 +1850,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             fig_procure_by_county = px.bar(procure_by_county, y='Procurement Source', x='count', color='county', barmode='group', 
                                            title='Procurement Sources by County', text_auto=True, orientation='h', 
                                            color_discrete_sequence=self.CATEGORY_COLOR_PALETTES.get('county'))
-            fig_procure_by_county.update_layout(chart_layout, height=500, 
+            fig_procure_by_county.update_layout(chart_layout, 
                                                 legend_title_text='County'
                                                 ).update_yaxes(categoryorder="total ascending")
             
@@ -1991,7 +1870,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
             fig_procure_by_level = px.bar(procure_by_level, y='Procurement Source', x='count', color='level', 
                                           barmode='group', title='Procurement Sources by KEPH Level', text_auto=True, orientation='h', 
                                           color_discrete_sequence=self.CATEGORY_COLOR_PALETTES.get('level'))
-            fig_procure_by_level.update_layout(chart_layout, height=500, legend_title_text='KEPH Level'
+            fig_procure_by_level.update_layout(chart_layout, legend_title_text='KEPH Level'
                                                ).update_yaxes(categoryorder="total ascending")
 
             equip_by_level_grouped = equip_available_df.groupby(['level', 'Equipment Label']).size().reset_index(name='count')
@@ -2009,7 +1888,7 @@ class ProjectBaselineView(LoginRequiredMixin, View):
                                               x='count', color='ownership', barmode='group', 
                                               title='Procurement Sources by Ownership', text_auto=True, 
                                               orientation='h', color_discrete_sequence=self.CATEGORY_COLOR_PALETTES.get('ownership'))
-            fig_procure_by_ownership.update_layout(chart_layout, height=500, 
+            fig_procure_by_ownership.update_layout(chart_layout, 
                                                    legend_title_text='Ownership').update_yaxes(categoryorder="total ascending")
 
             equip_by_ownership_grouped = equip_available_df.groupby(['ownership', 'Equipment Label']).size().reset_index(name='count')
@@ -2249,7 +2128,7 @@ def get_county_geodata():
         return county_gdf
         
     except Exception as e:
-        print(f"Error loading county data: {str(e)}")
+        # print(f"Error loading county data: {str(e)}")
         return gpd.GeoDataFrame([], columns=['name', 'geometry'])
 
 # Initialize county data cache

@@ -1,65 +1,99 @@
 import pandas as pd
 import numpy as np
+from django.core.cache import cache
 
+import pandas as pd
+import numpy as np
+from django.core.cache import cache
 
 def load_and_clean_data(filepath=r"redcap_baseline_complete.csv"):
     """
-    Loads the raw REDCap facility data, performs all necessary cleaning steps,
-    and returns a clean DataFrame ready for analysis.
-
-    Args:
-        filepath (str): The full path to the CSV data file.
-
-    Returns:
-        pd.DataFrame: A cleaned and prepared pandas DataFrame.
+    Loads and cleans the REDCap facility data.
+    This function is cached to avoid expensive re-processing on every call.
     """
-    print("--- Starting Data Loading and Cleaning ---")
+    cache_key = 'cleaned_redcap_dataframe'
+    
+    # Try to get the data from the cache first
+    df = cache.get(cache_key)
+    
+    # --- CACHE HIT ---
+    # If the dataframe is found, return it immediately.
+    if df is not None:
+        # print("--- Loading Cleaned DataFrame from CACHE ---")
+        return df
+        
+    # --- CACHE MISS ---
+    # If not in cache, run the expensive cleaning process.
+    # print("--- Starting Data Loading and Cleaning (Cache Miss) ---")
     
     try:
         df = pd.read_csv(filepath)
     except FileNotFoundError:
-        print(f"Error: Data file not found at {filepath}")
+        # print(f"Error: Data file not found at {filepath}")
         return None
 
     # --- Initial Cleaning ---
     if 'Unnamed: 0' in df.columns:
         df.drop(columns=['Unnamed: 0'], inplace=True)
     
-    # --- Data Type Correction for Staff Counts ---
+    # --- All of your cleaning logic remains here ---
     staff_col_keywords = ['employed', '_start', '_end', '_hiv', '_ncd', '_trained', '_left']
     cols_to_convert = [
         col for col in df.columns 
         if any(keyword in col for keyword in staff_col_keywords) and df[col].dtype == 'float64'
     ]
     df[cols_to_convert] = df[cols_to_convert].fillna(0).astype(int)
-    print(f"Corrected data types for {len(cols_to_convert)} staffing columns.")
-
-    # --- Convert Placeholders (e.g., 9999) to NaN ---
+    
     placeholders_to_replace = [9999.0, 99999.0, 999999.0, 9999999.0]
     numeric_cols = df.select_dtypes(include=np.number).columns
     for col in numeric_cols:
         df[col] = df[col].replace(placeholders_to_replace, np.nan)
-    print(f"Scanned for and replaced placeholders in numeric columns.")
-
-    # --- Coerce Patient Count Columns to Numeric ---
+        
     patient_count_prefixes = ['outpatient_', 'hiv_', 'diabetes_', 'htn_', 'dm_htn_', 'hiv_dm_', 'hiv_htn_', 'hiv_htn_dm_']
     all_patient_cols = [col for col in df.columns if any(col.startswith(p) for p in patient_count_prefixes)]
     for col in all_patient_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
-    print(f"Converted {len(all_patient_cols)} patient count columns to numeric, handling errors.")
-
-    # --- Impute Key Numeric Columns with Median ---
+        
     numerical_cols_to_impute = [col for col in all_patient_cols if df[col].isnull().any()]
     for col in numerical_cols_to_impute:
         median_value = df[col].median()
         df[col] = df[col].fillna(median_value)
-    print(f"Imputed missing values in {len(numerical_cols_to_impute)} patient count columns with the median.")
     
-    print("--- Data Loading and Cleaning Complete ---")
-    df['ownership']=df['ownership'].replace("Ministry of Health","MOH")
-    df['ownership']=df['ownership'].replace("Private Practice","Private")
-    return df
+    # print("--- Data Cleaning Logic Complete ---")
 
+    # (Minor improvement: Combine replaces into one call with a dictionary)
+    df['ownership'] = df['ownership'].replace({
+        "Ministry of Health": "MOH",
+        "Private Practice": "Private"
+    })
+
+    cols_to_update = ['his_hiv', 'his_ncd']
+    for col in cols_to_update:
+        conditions = [
+            df[col].str.contains('emr', case=False, na=False),
+            df[col].str.contains('paper', case=False, na=False)
+        ]
+        choices = ['EMR Based', 'Paper Based']
+        df[col] = np.select(conditions, choices, default=df[col])
+
+    # 1. Define the mapping from old text to new text
+    care_model_map = {
+        'HIV and NCD services are separately located and provided by different providers': 'Separate Location, Different Providers',
+        'HIV and NCD services are co-located space and provided by the same provider': 'Co-located, Same Provider',
+        'HIV and NCD services are separately located but provided by the same providers': 'Separate Location, Same Provider',
+        'HIV and NCD services are co-located but provided by different providers respectively': 'Co-located, Different Providers'
+    }
+
+    # 2. Apply the replacement to the column
+    df['patients_hivncd_care'] = df['patients_hivncd_care'].replace(care_model_map)
+
+    # --- FINAL STEP BEFORE RETURNING ---
+    # Set the fully cleaned DataFrame in the cache.
+    # This is OUTSIDE the for loop, but still INSIDE the "cache miss" block.
+    # print("--- Storing Cleaned DataFrame in Cache ---")
+    cache.set(cache_key, df, timeout=3600) # timeout is 1 hour
+
+    return df
 # In the same file, e.g., your_app/data_utils.py
 
 def create_average_df(df):
@@ -77,7 +111,7 @@ def create_average_df(df):
     if df is None:
         return None
         
-    print("--- Creating DataFrame with Average Patient Loads ---")
+    # print("--- Creating DataFrame with Average Patient Loads ---")
     
     conditions = {
         'Outpatient': [col for col in df.columns if col.startswith('outpatient_')],
@@ -100,5 +134,5 @@ def create_average_df(df):
     # Combine key identifiers with the new average columns
     identifier_cols = ['facility_mfl', 'facility_name', 'county', 'level', 'ownership']
     df_with_averages = pd.concat([df[identifier_cols], df_new_cols], axis=1)
-    print("--- DataFrame with Averages Created Successfully ---")
+    # print("--- DataFrame with Averages Created Successfully ---")
     return df_with_averages
