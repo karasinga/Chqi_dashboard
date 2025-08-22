@@ -25,7 +25,7 @@ jobs:
           set -e
           
           # Navigate to the project directory
-          cd /home/researcheval.ac.ke/public_html/
+          cd /home/researcheval.co.ke/public_html/
           
           # Pull the latest changes from the main branch
           git pull origin main
