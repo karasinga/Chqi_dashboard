@@ -21,6 +21,9 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+          # Exit immediately if a command exits with a non-zero status.
+          set -e
+          
           # Navigate to the project directory
           cd /home/researcheval.ac.ke/public_html/
           
