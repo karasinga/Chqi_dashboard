@@ -6,10 +6,10 @@ from .views import update_phase_status, update_milestone_status, update_timeline
 from .views import ProjectServiceDeliveryView, ProjectHealthProductsTechnologiesView, ProjectHumanResourceForHealthView
 from .views import ProjectHealthInfoSystemsView, ProjectHealthFinancingView, ProjectDataQualityView
 from .views import ProjectLeadershipGovernanceView, ProjectBaselineView, county_boundaries_api
-from django.contrib.auth.views import LogoutView  # Add logout view
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
-    path('logout/', LogoutView.as_view(), name='logout'),  # Add logout URL
+    path('logout/', LogoutView.as_view(), name='logout'),
     path('', LandingPageView.as_view(), name='landing_page'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('project/<int:project_id>/overview/', ProjectOverviewView.as_view(), name='project_overview'),
