@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-3bz(e9k-knt8inio-y(hl+5vq)ez!4hyv*&ulpn+@7m9aao1@*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','researcheval.ttl.co.ke','ttl.co.ke',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','researcheval.ttl.co.ke','ttl.co.ke','researcheval.co.ke', 'www.researcheval.co.ke', '87.98.250.3']
 
 # # Security settings for cookies and sessions
 # # CSRF and session cookie settings
@@ -131,19 +131,16 @@ WSGI_APPLICATION = 'evaluation.wsgi.application'
 # import os
 
 if not DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': os.environ.get('SQL_DATABASE'),
-            'USER': os.environ.get('SQL_USER'),
-            'PASSWORD': os.environ.get('SQL_PASSWORD'),
-            'HOST': os.environ.get('SQL_HOST', 'localhost'),
-            'PORT': os.environ.get('SQL_PORT', '5432'),
-            # 'OPTIONS': {
-            #     'charset': 'utf8mb4',
-            # },
-        }
-    }
+   DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config('SQL_DATABASE'),
+        'USER': config('SQL_USER'),
+        'PASSWORD': config('SQL_PASSWORD'),
+        'HOST': config('SQL_HOST', default='localhost'),
+        'PORT': config('SQL_PORT', default='3306'), # The default port for MySQL is 3306
+    	}
+	}
 else:
     import tempfile
     db_path = os.path.join(tempfile.gettempdir(), 'chqi_db.sqlite3')
