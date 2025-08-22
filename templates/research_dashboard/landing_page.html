@@ -221,10 +221,9 @@
             <!-- <span class="badge rounded-pill px-3 py-2 mb-4">For The University of Nairobi</span> -->
             <h1 class="display-3 fw-bold mb-4">The Operating System<br>for Modern Research</h1>
             <p class="lead mx-auto mb-5" style="max-width: 650px;">Move beyond scattered data. ResearchEval provides a unified platform to manage projects, track progress, and generate insights—empowering you to accelerate discovery.</p>
-            <div class="d-grid gap-3 d-sm-flex justify-content-center">
-                <a href="#cta" class="btn btn-primary btn-lg">Request a Demo</a>
-                <a href="{% url 'login' %}" class="btn hero-glass-btn btn-lg">Log In</a>
-            </div>
+<div class="d-grid gap-3 d-sm-flex justify-content-center">
+    <a href="{% url 'login' %}" class="btn hero-glass-btn btn-lg">Log In</a>
+</div>
         </div>
     </section>
 
@@ -325,7 +324,7 @@
         <div class="container" style="max-width: 800px;">
             <div class="testimonial-card text-center">
                  <div class="quote-icon"><i class="mdi mdi-format-quote-open"></i></div>
-                 <img src="https://via.placeholder.com/80" alt="Prof. Stephen Kiama" class="rounded-circle mb-4" style="width: 80px; height: 80px; object-fit: cover;">
+                 <img src="{% static 'images/Prof Kiama.png' %}" alt="Prof. Stephen Kiama" class="rounded-circle mb-4" style="width: 80px; height: 80px; object-fit: cover;">
                  <blockquote class="mb-4">"The University of Nairobi is one of the universities selected by donors to accelerate research on health and innovation. Tools like ResearchEval are essential to this mission."</blockquote>
                  <cite class="d-block fw-bold fs-5">— Prof. Stephen Kiama</cite>
                  <span class="text-muted">Vice Chancellor, University of Nairobi</span>
@@ -339,10 +338,9 @@
             <div class="cta-card">
                 <h2 class="display-5 fw-bold mb-3">Get Started with ResearchEval</h2>
                 <p class="lead mx-auto" style="max-width: 600px;">Join the platform that helps you focus on discovery, not administration. Free for all UoN-affiliated research teams.</p>
-                <div class="d-flex justify-content-center flex-wrap gap-3 my-4">
-                     <a href="#" class="btn btn-light btn-lg">Request a Demo</a>
-                     <a href="{% url 'login' %}" class="btn btn-light-outline btn-lg">Log In</a>
-                </div>
+<div class="d-flex justify-content-center flex-wrap gap-3 my-4">
+     <a href="{% url 'login' %}" class="btn btn-light-outline btn-lg">Log In</a>
+</div>
             </div>
         </div>
     </section>
