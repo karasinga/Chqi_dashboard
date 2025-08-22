@@ -29,55 +29,6 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost','researcheval.ttl.co.ke','ttl.co.ke','researcheval.co.ke', 'www.researcheval.co.ke', '87.98.250.3']
 
-# # Security settings for cookies and sessions
-# # CSRF and session cookie settings
-# CSRF_COOKIE_DOMAIN = '.ttl.co.ke' if not DEBUG else None
-# CSRF_COOKIE_SECURE = not DEBUG  # Secure in production
-# CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access
-# CSRF_COOKIE_SAMESITE = 'Lax'  # Balance security and functionality
-# SESSION_COOKIE_DOMAIN = '.ttl.co.ke' if not DEBUG else None
-# SESSION_COOKIE_SECURE = not DEBUG  # Match CSRF cookie
-# SESSION_COOKIE_SAMESITE = 'Lax'  # Match CSRF cookie
-# CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke'] if not DEBUG else []
-
-# SECURITY WARNING: don't run with debug turned on in production!
-# We will set DEBUG based on the environment
-# IS_PRODUCTION = os.environ.get('DJANGO_ENV') == 'production'
-# DEBUG = not IS_PRODUCTION
-
-# # Update ALLOWED_HOSTS to be dynamic
-# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-# if IS_PRODUCTION:
-#     ALLOWED_HOSTS.extend(['researcheval.ttl.co.ke', 'ttl.co.ke'])
-
-
-# --- NEW, ROBUST SECURITY SETTINGS ---
-
-# if IS_PRODUCTION:
-# Production-only settings
-# CSRF_COOKIE_DOMAIN = '.ttl.co.ke'
-# SESSION_COOKIE_DOMAIN = '.ttl.co.ke'
-# CSRF_COOKIE_SECURE = True
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SAMESITE = 'Lax'
-# SESSION_COOKIE_SAMESITE = 'Lax'
-# CSRF_TRUSTED_ORIGINS = ['https://researcheval.ttl.co.ke']
-# # You should also set this for stronger security in production
-# SECURE_SSL_REDIRECT = True
-# SECURE_HSTS_SECONDS = 31536000 # 1 year
-# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-# SECURE_HSTS_PRELOAD = True
-# else:
-#     # Development settings (these are the defaults, but it's good to be explicit)
-#     CSRF_COOKIE_DOMAIN = None
-#     SESSION_COOKIE_DOMAIN = None
-#     CSRF_COOKIE_SECURE = False
-#     SESSION_COOKIE_SECURE = False
-#     CSRF_COOKIE_SAMESITE = 'Lax'
-#     SESSION_COOKIE_SAMESITE = 'Lax'
-#     # For local development, your origin is typically http://127.0.0.1:8000
-#     CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
-
 
 # Application definition
 
