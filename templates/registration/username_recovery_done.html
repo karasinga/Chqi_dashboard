@@ -1,0 +1,24 @@
+<!-- username recovery done -->
+ {% extends "research_dashboard/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">Username Recovery Sent</h3>
+                </div>
+                <div class="card-body">
+                    <p>We've emailed you the username associated with your email address. If an account exists, you should receive it shortly.</p>
+                    <p>If you don't receive an email, please make sure you've entered the address you registered with, and check your spam folder.</p>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'landing_page' %}" class="btn btn-primary">Return to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
 from django.views.generic import TemplateView, ListView, UpdateView, DetailView
 
 from research_dashboard.data_utils import create_average_df, load_and_clean_data
@@ -2147,3 +2148,34 @@ def county_boundaries_api(request):
     # Convert to GeoJSON
     geojson_data = json.loads(gdf.to_json())
     return JsonResponse(geojson_data)
+
+# Username recovery view
+from django.contrib.auth.views import PasswordResetDoneView
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.views.generic import FormView
+
+class UsernameRecoveryView(FormView):
+    template_name = 'registration/username_recovery_form.html'
+    form_class = PasswordResetForm  # Reusing the password reset form for email field
+    success_url = reverse_lazy('username_recovery_done')
+
+    def form_valid(self, form):
+        email = form.cleaned_data['email']
+        associated_users = User.objects.filter(email__iexact=email)
+        if associated_users.exists():
+            for user in associated_users:
+                # Send email with username
+                subject = render_to_string('registration/username_recovery_subject.txt')
+                # Email subject must be a single line
+                subject = ''.join(subject.splitlines())
+                message = render_to_string('registration/username_recovery_email.html', {
+                    'user': user,
+                })
+                send_mail(subject, message, None, [user.email])
+        # Always return success to avoid revealing if email exists
+        return super().form_valid(form)

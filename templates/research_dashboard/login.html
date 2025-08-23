@@ -198,7 +198,11 @@
                             
                             <div class="text-center">
                                 <p class="mb-3">Don't have an account? <a href="#" class="text-primary text-decoration-none fw-medium">Request access</a></p>
-                                <a href="{% url 'password_reset' %}" class="text-decoration-none d-block text-muted">Forgot password?</a>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <a href="{% url 'password_reset' %}" class="text-decoration-none text-muted">Forgot password?</a>
+                                    <span class="text-muted">|</span>
+                                    <a href="{% url 'username_recovery' %}" class="text-decoration-none text-muted">Forgot username?</a>
+                                </div>
                             </div>
                         </form>
                     </div>
