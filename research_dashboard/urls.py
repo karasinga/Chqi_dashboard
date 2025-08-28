@@ -5,7 +5,7 @@ from .views import EvaluatorDeleteView, EvaluationView, EvaluationDetailView, Ev
 from .views import update_phase_status, update_milestone_status, update_timeline_order
 from .views import ProjectServiceDeliveryView, ProjectHealthProductsTechnologiesView, ProjectHumanResourceForHealthView
 from .views import ProjectHealthInfoSystemsView, ProjectHealthFinancingView, ProjectDataQualityView
-from .views import ProjectLeadershipGovernanceView, ProjectBaselineView, county_boundaries_api
+from .views import ProjectLeadershipGovernanceView, ProjectBaselineView, county_boundaries_api, invalidate_baseline_cache
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -32,6 +32,7 @@ urlpatterns = [
     path('project/<int:project_id>/upload_document/', 
          ProjectOverviewView.as_view(), name='upload_document'),
     path('api/county-boundaries/', county_boundaries_api, name='api_county_boundaries'),
+    path('invalidate-baseline-cache/', invalidate_baseline_cache, name='invalidate_baseline_cache'),
     path('about/', AboutView.as_view(), name='about'),
     path('evaluators/', EvaluatorListView.as_view(), name='evaluators'),
     path('evaluators/<int:pk>/delete/', EvaluatorDeleteView.as_view(), name='delete_evaluator'),

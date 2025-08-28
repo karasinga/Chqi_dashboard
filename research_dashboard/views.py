@@ -44,7 +44,8 @@ def get_baseline_data():
         df = load_and_clean_data(csv_path)
         if df is None:
             raise ValueError("Failed to load baseline data file")
-        cache.set('baseline_df', df, 3600)
+        # Cache for 24 hours since data rarely changes
+        cache.set('baseline_df', df, 86400)  
     return df
 
 def get_baseline_data_with_averages():
@@ -53,8 +54,18 @@ def get_baseline_data_with_averages():
     df_with_averages = cache.get('baseline_df_with_averages')
     if df_with_averages is None:
         df_with_averages = create_average_df(df)
-        cache.set('baseline_df_with_averages', df_with_averages, 3600)
+        # Cache for 24 hours since data rarely changes
+        cache.set('baseline_df_with_averages', df_with_averages, 86400)  
     return df, df_with_averages
+
+# Cache warm-up function
+def warm_up_baseline_cache():
+    """Pre-load baseline data cache to avoid cold-start delays"""
+    try:
+        get_baseline_data_with_averages()
+        return True
+    except Exception:
+        return False
 
 class DashboardView(View):
     """Improved view for research project dashboard"""
@@ -965,6 +976,18 @@ from .models import ResearchProject
 # Set up a logger for this module
 logger = logging.getLogger(__name__)    
 
+
+# Add cache invalidation endpoint
+@require_http_methods(["POST"])
+@login_required
+def invalidate_baseline_cache(request):
+    """Invalidate baseline data cache (admin-only)"""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    cache.delete('baseline_df')
+    cache.delete('baseline_df_with_averages')
+    return JsonResponse({'status': 'cache invalidated'})
 
 class ProjectBaselineView(LoginRequiredMixin, View):
     """
