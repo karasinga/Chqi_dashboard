@@ -2,6 +2,7 @@
 /* Target the sub-navigation container */
 #baseline-sub-nav .nav-tabs {
     border-bottom: 1px solid #dee2e6; /* A subtle line for the whole bar */
+    position: relative; /* For spinner positioning */
 }
 
 /* Style for each link in the sub-nav */
@@ -13,6 +14,7 @@
     padding-left: 0;
     padding-right: 1.5rem; /* Add some spacing between items */
     margin-bottom: -1px; /* Align with the main border */
+    position: relative; /* For spinner positioning */
 }
 
 /* Style for the link on hover */
@@ -28,6 +30,57 @@
     font-weight: 500; /* Make the active link text slightly bolder */
     border-bottom: 3px solid #f50dfd; /* The key active indicator line */
 }
+
+/* Spinner styles */
+.nav-link .spinner {
+    display: none;
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top: 2px solid #0d6efd;
+    animation: spin 1s linear infinite;
+}
+
+.nav-link.htmx-request .spinner {
+    display: inline-block;
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Loading state for content */
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+
+.htmx-request.htmx-indicator {
+    opacity: 1;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 200px;  /* Start well below navigation tabs and entire filters section */
+    left: 0;
+    width: 100%;
+    height: calc(100% - 200px);  /* Adjust height to not cover tabs or filters */
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
 </style>
 
 <div id="baseline-sub-nav">
@@ -38,6 +91,7 @@
                hx-get="{% url 'project_baseline' project.id %}?tab=facility_profile"
                hx-target="#project-content" hx-swap="innerHTML">
                 Facility Profile
+                <span class="spinner"></span>
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -45,6 +99,7 @@
                hx-get="{% url 'project_baseline' project.id %}?tab=staff_profile"
                hx-target="#project-content" hx-swap="innerHTML">
                 Staff Profile
+                <span class="spinner"></span>
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -52,6 +107,7 @@
                hx-get="{% url 'project_baseline' project.id %}?tab=service_integration"
                hx-target="#project-content" hx-swap="innerHTML">
                 Service Integration
+                <span class="spinner"></span>
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -59,6 +115,7 @@
            hx-get="{% url 'project_baseline' project.id %}?tab=patient_load"
            hx-target="#project-content" hx-swap="innerHTML">
             Patient Load
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -66,6 +123,7 @@
            hx-get="{% url 'project_baseline' project.id %}?tab=his"
            hx-target="#project-content" hx-swap="innerHTML">
             Health Information Systems
+            <span class="spinner"></span>
         </a>
     </li> 
     <li class="nav-item" role="presentation">
@@ -73,6 +131,7 @@
            hx-get="{% url 'project_baseline' project.id %}?tab=supply_chain"
            hx-target="#project-content" hx-swap="innerHTML">
             Supply Chain & Products
+            <span class="spinner"></span>
         </a>
     </li> 
     <li class="nav-item" role="presentation">
@@ -80,6 +139,7 @@
            hx-get="{% url 'project_baseline' project.id %}?tab=governance"
            hx-target="#project-content" hx-swap="innerHTML">
             Governance & Challenges
+            <span class="spinner"></span>
         </a>
     </li>  
     <li class="nav-item" role="presentation">
@@ -87,12 +147,18 @@
            hx-get="{% url 'project_baseline' project.id %}?tab=system_financing"
            hx-target="#project-content" hx-swap="innerHTML">
             System Financing
+            <span class="spinner"></span>
         </a>
     </li>     
     </ul>
 
-    <div class="tab-content pt-3" id="baseline-sub-nav-tab-content">
-        <div class="tab-pane fade show active" id="dynamic-tab-content">
+    <div class="tab-content pt-3" id="baseline-sub-nav-tab-content" style="position: relative;">
+        <div class="htmx-indicator loading-overlay">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div class="tab-pane fade show active" id="dynamic-tab-content" style="position: relative; z-index: 1;">
             {% if current_sub_view == 'facility_profile' %}
                 {% include 'research_dashboard/partials/facility_profile.html' %}
             {% elif current_sub_view == 'staff_profile' %}
