@@ -10,6 +10,14 @@
         background: linear-gradient(135deg, #f0f2f5 0%, #e6e9ff 100%);
         min-height: 100vh;
     }
+
+    /* Login page zoom wrapper */
+    .login-zoom-wrapper {
+        transform: scale(0.75);
+        transform-origin: top left;
+        width: calc(100% / 0.75); /* Compensate for zoom scaling */
+        height: calc(100% / 0.75); /* Compensate for zoom scaling */
+    }
     
     /* --- Navbar Styles --- */
     .navbar {
@@ -150,7 +158,8 @@
 </nav>
 
 <!-- Main Login Content -->
-<div class="login-section">
+<div class="login-zoom-wrapper">
+    <div class="login-section">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6 col-xl-5">
@@ -209,6 +218,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 
