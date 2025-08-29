@@ -63,6 +63,14 @@
         .main-content-collapsed {
             margin-left: var(--sidebar-collapsed-width);
         }
+
+        /* Global zoom wrapper for consistent content scaling */
+        .global-zoom-wrapper {
+            transform: scale(0.75);
+            transform-origin: top left;
+            width: calc(100% / 0.75); /* Compensate for zoom scaling */
+            height: calc(100% / 0.75); /* Compensate for zoom scaling */
+        }
         
         /* --- Sidebar --- */
         .sidebar {
@@ -342,19 +350,21 @@
 
     <div class="main-content" id="main-content">
         <!-- Main content from your block -->
-        {% if messages %}
-        <div class="mb-4">
-            {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="global-zoom-wrapper">
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            {% endif %}
+
+            {% block content %}
+            {% endblock %}
         </div>
-        {% endif %}
-        
-        {% block content %}
-        {% endblock %}
     </div>
 
     <!-- Scripts
@@ -457,10 +467,14 @@
         }
 
         // Apply collapsed state immediately to prevent flicker
+        // Default to collapsed state for better user experience
         (function() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('main-content');
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            const storedState = localStorage.getItem('sidebarCollapsed');
+
+            // Default to collapsed if no stored state exists
+            const isCollapsed = storedState === null ? true : storedState === 'true';
 
             if (isCollapsed) {
                 sidebar.classList.add('sidebar-collapsed');
