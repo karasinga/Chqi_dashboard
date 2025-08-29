@@ -37,15 +37,23 @@ import json
 from .data_utils import load_and_clean_data, create_average_df
 
 def get_baseline_data():
-    """Centralized function to load and cache baseline data consistently across views"""
+    """Centralized function to load and cache baseline data on first request"""
+    # Try to get existing cache
     df = cache.get('baseline_df')
+    
     if df is None:
-        csv_path = os.path.join(settings.BASE_DIR, 'redcap_baseline_complete.csv')
-        df = load_and_clean_data(csv_path)
-        if df is None:
-            raise ValueError("Failed to load baseline data file")
-        # Cache for 24 hours since data rarely changes
-        cache.set('baseline_df', df, 86400)  
+        # First user request - load and cache data
+        try:
+            csv_path = os.path.join(settings.BASE_DIR, 'redcap_baseline_complete.csv')
+            df = load_and_clean_data(csv_path)
+            if df is None:
+                raise ValueError("Failed to load baseline data file")
+            # Cache for 30 days (2592000 seconds)
+            cache.set('baseline_df', df, 2592000)
+            logger.info("Baseline data cached successfully by first user request")
+        except Exception as e:
+            logger.error(f"Error loading baseline data: {str(e)}")
+            raise
     return df
 
 def get_baseline_data_with_averages():
@@ -54,8 +62,8 @@ def get_baseline_data_with_averages():
     df_with_averages = cache.get('baseline_df_with_averages')
     if df_with_averages is None:
         df_with_averages = create_average_df(df)
-        # Cache for 24 hours since data rarely changes
-        cache.set('baseline_df_with_averages', df_with_averages, 86400)  
+        # Cache for 30 days (2592000 seconds) since data rarely changes
+        cache.set('baseline_df_with_averages', df_with_averages, 2592000)  
     return df, df_with_averages
 
 # Cache warm-up function
@@ -64,7 +72,8 @@ def warm_up_baseline_cache():
     try:
         get_baseline_data_with_averages()
         return True
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error warming up baseline cache: {str(e)}")
         return False
 
 class DashboardView(View):
