@@ -1,3 +1,37 @@
+<style>
+/* Project navbar loading styles */
+#project-nav-tabs .nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#project-nav-tabs .nav-link .spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0, 123, 255, 0.3);
+    border-radius: 50%;
+    border-top: 2px solid #007bff;
+    animation: project-nav-spin 1s linear infinite;
+}
+
+#project-nav-tabs .nav-link.htmx-request .spinner {
+    display: inline-block;
+}
+
+@keyframes project-nav-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Ensure icons don't interfere with spinner positioning */
+#project-nav-tabs .nav-link i {
+    flex-shrink: 0;
+}
+</style>
+
 <ul class="nav nav-tabs" id="project-nav-tabs" role="tablist">
     
     <li class="nav-item" role="presentation">
@@ -6,6 +40,7 @@
            role="tab"
            aria-selected="{% if current_view == 'overview' %}true{% else %}false{% endif %}">
             <i class="mdi mdi-information-outline"></i> Project Overview
+            <span class="spinner"></span>
         </a>
     </li>
     <!-- NOTE: Each link now has hx-get, hx-target, and hx-push-url -->
@@ -15,6 +50,7 @@
            hx-get="{% url 'project_timeline' project_id=project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-chart-timeline"></i> Timeline
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -23,6 +59,7 @@
            hx-get="{% url 'project_baseline' project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-chart-bell-curve-cumulative"></i> Baseline
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -31,6 +68,7 @@
            hx-get="{% url 'project_service_delivery' project_id=project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-stethoscope"></i> Service Delivery
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -39,6 +77,7 @@
            hx-get="{% url 'project_health_products_technologies' project_id=project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-stethoscope"></i> Health Products and Technologies
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -47,6 +86,7 @@
            hx-get="{% url 'project_human_resource_for_health' project_id=project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-stethoscope"></i> Human Resource for Health
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -55,6 +95,7 @@
            hx-get="{% url 'project_health_info_systems' project_id=project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-stethoscope"></i> Health Information Systems
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -63,6 +104,7 @@
            hx-get="{% url 'project_health_financing' project_id=project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-stethoscope"></i> Health System Financing
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -71,6 +113,7 @@
            hx-get="{% url 'project_leadership_governance' project_id=project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-stethoscope"></i> Leadership & Governance
+            <span class="spinner"></span>
         </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -79,6 +122,7 @@
            hx-get="{% url 'project_data_quality' project_id=project.id %}"
            hx-target="#project-content" hx-swap="innerHTML" hx-push-url="true">
             <i class="mdi mdi-stethoscope"></i> Data Quality
+            <span class="spinner"></span>
         </a>
     </li>
 </ul>
