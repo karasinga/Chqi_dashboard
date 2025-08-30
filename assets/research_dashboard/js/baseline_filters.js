@@ -1,7 +1,7 @@
 /**
- * Baseline Filters JavaScript - Hybrid Approach
+ * Baseline Filters JavaScript - Enhanced Hybrid Approach
  * Combines excellent TomSelect integration with simplified HTMX handling
- * Implements debounced filter updates for improved UX
+ * Implements debounced filter updates with change tracking during requests
  */
 
 class BaselineFilters {
@@ -15,11 +15,10 @@ class BaselineFilters {
         this.debounceDelay = 500; // 500ms delay
         this.debounceTimer = null;
         this.isRequestInProgress = false;
-        this.pendingChangesQueue = []; // Queue to track user selections during requests
-        this.lastProcessedState = null; // Track the last successfully processed filter state
+        this.pendingChanges = false; // Flag to track if changes occurred during request
 
         this.initializeEventListeners();
-        console.log('Baseline filters initialized with enhanced debouncing');
+        console.log('Baseline filters initialized with enhanced debouncing and change tracking');
     }
 
     /**
@@ -39,29 +38,16 @@ class BaselineFilters {
         });
 
         this.form.addEventListener('htmx:afterRequest', () => {
-            // Add a small delay before accepting new changes to prevent rapid-fire requests
-            setTimeout(() => {
-                this.isRequestInProgress = false;
-
-                // Process any queued changes
-                if (this.pendingChangesQueue.length > 0) {
-                    console.log(`Processing ${this.pendingChangesQueue.length} queued changes`);
-
-                    // Get the most recent change (last in queue)
-                    const latestChange = this.pendingChangesQueue[this.pendingChangesQueue.length - 1];
-                    this.pendingChangesQueue = []; // Clear the queue
-
-                    console.log('Applying latest queued change:', latestChange);
-
-                    // Apply the latest state to the form
-                    this.applyFilterState(latestChange.state);
-
-                    // Trigger a new filter update with the queued state
-                    setTimeout(() => {
-                        this.handleFilterChange({ target: { name: latestChange.source } });
-                    }, 50);
-                }
-            }, 100);
+            this.isRequestInProgress = false;
+            
+            // If changes were made during the request, trigger an update
+            if (this.pendingChanges) {
+                this.pendingChanges = false;
+                // Small delay to ensure UI is responsive
+                setTimeout(() => {
+                    this.triggerFilterUpdate();
+                }, 50);
+            }
         });
     }
 
@@ -82,15 +68,9 @@ class BaselineFilters {
             clearTimeout(this.debounceTimer);
         }
 
-        // If a request is already in progress, queue this change
+        // If a request is already in progress, mark that changes occurred
         if (this.isRequestInProgress) {
-            const currentState = this.getCurrentFilterValues();
-            this.pendingChangesQueue.push({
-                state: currentState,
-                timestamp: Date.now(),
-                source: event?.target?.name || 'unknown'
-            });
-            console.log('Request in progress, queued change:', currentState);
+            this.pendingChanges = true;
             return;
         }
 
@@ -120,6 +100,7 @@ class BaselineFilters {
      */
     triggerFilterUpdate() {
         if (this.isRequestInProgress) {
+            this.pendingChanges = true;
             return;
         }
 
@@ -133,7 +114,9 @@ class BaselineFilters {
         // Add existing URL parameters (like tab)
         const currentUrl = new URL(window.location.href);
         for (let [key, value] of currentUrl.searchParams) {
-            params.append(key, value);
+            if (!formData.has(key)) { // Only keep params that aren't in the form
+                params.append(key, value);
+            }
         }
 
         // Add form data
@@ -147,16 +130,21 @@ class BaselineFilters {
         const baseUrl = this.form.getAttribute('hx-get').split('?')[0];
         this.form.setAttribute('hx-get', baseUrl + '?' + params.toString());
 
+        // Update URL without reloading page (for bookmarking/sharing)
+        if (window.history && window.history.replaceState) {
+            const newUrl = window.location.pathname + '?' + params.toString();
+            window.history.replaceState({}, '', newUrl);
+        }
+
         // Trigger HTMX request manually
         htmx.ajax('GET', this.form.getAttribute('hx-get'), {
             target: this.form.getAttribute('hx-target'),
             swap: this.form.getAttribute('hx-swap')
         });
 
-        // Reset flags and loading state after a short delay
+        // Reset loading state after a short delay
         setTimeout(() => {
             this.setLoadingState(false);
-            this.isRequestInProgress = false;
         }, 100);
     }
 
@@ -177,99 +165,6 @@ class BaselineFilters {
     }
 
     /**
-     * Get current filter values as FormData
-     */
-    getCurrentFilterValues() {
-        // Sync TomSelect instances first
-        this.syncAllFilters();
-        
-        const values = {};
-
-        // Get all select elements
-        const allSelects = this.form.querySelectorAll('select[multiple]');
-        
-        allSelects.forEach(select => {
-            const name = select.getAttribute('name');
-            values[name] = [];
-            
-            // If TomSelect exists, get values from it
-            if (select.tomselect) {
-                const tomSelectValues = select.tomselect.getValue();
-                if (Array.isArray(tomSelectValues)) {
-                    values[name] = tomSelectValues;
-                } else if (tomSelectValues) {
-                    values[name] = [tomSelectValues];
-                }
-            } else {
-                // Fallback to native select
-                for (let i = 0; i < select.options.length; i++) {
-                    if (select.options[i].selected) {
-                        values[name].push(select.options[i].value);
-                    }
-                }
-            }
-        });
-
-        console.log('Current filter values:', values);
-        return values;
-    }
-
-    /**
-     * Apply a saved filter state to the form
-     */
-    applyFilterState(filterState) {
-        console.log('Applying filter state:', filterState);
-
-        // Clear all current selections
-        const allSelects = this.form.querySelectorAll('select[multiple]');
-        allSelects.forEach(select => {
-            // Clear native select options
-            for (let i = 0; i < select.options.length; i++) {
-                select.options[i].selected = false;
-            }
-
-            // Clear TomSelect if it exists
-            if (select.tomselect) {
-                select.tomselect.clear();
-            }
-        });
-
-        // Apply the saved state with a small delay between each filter
-        let delay = 0;
-        for (const [filterName, values] of Object.entries(filterState)) {
-            setTimeout(() => {
-                const selectElement = this.form.querySelector(`select[name="${filterName}"]`);
-                if (selectElement && values.length > 0) {
-                    console.log(`Setting ${filterName} to:`, values);
-
-                    // Update native select options first
-                    for (let i = 0; i < selectElement.options.length; i++) {
-                        const option = selectElement.options[i];
-                        if (values.includes(option.value)) {
-                            option.selected = true;
-                        }
-                    }
-
-                    // Update TomSelect if it exists
-                    if (selectElement.tomselect) {
-                        // Use sync() to ensure TomSelect reflects the native select state
-                        selectElement.tomselect.sync();
-                        // Then set the values
-                        selectElement.tomselect.setValue(values);
-                    }
-
-                    // Trigger change event
-                    const changeEvent = new Event('change', { bubbles: true });
-                    selectElement.dispatchEvent(changeEvent);
-                }
-            }, delay);
-            delay += 50; // Stagger updates by 50ms
-        }
-
-        console.log('Filter state applied');
-    }
-
-    /**
      * Force immediate update (for reset functions)
      */
     forceUpdate() {
@@ -277,27 +172,6 @@ class BaselineFilters {
             clearTimeout(this.debounceTimer);
         }
         this.triggerFilterUpdate();
-    }
-
-    /**
-     * Get queue status for debugging
-     */
-    getQueueStatus() {
-        return {
-            queueLength: this.pendingChangesQueue.length,
-            isRequestInProgress: this.isRequestInProgress,
-            lastProcessedState: this.lastProcessedState
-        };
-    }
-
-    /**
-     * Clear the pending changes queue
-     */
-    clearQueue() {
-        const clearedCount = this.pendingChangesQueue.length;
-        this.pendingChangesQueue = [];
-        console.log(`Cleared ${clearedCount} pending changes from queue`);
-        return clearedCount;
     }
 }
 
