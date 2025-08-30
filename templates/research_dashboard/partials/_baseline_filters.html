@@ -1,3 +1,5 @@
+{% load static %}
+
 <style>
 .filter-label-container {
     display: flex;
@@ -139,6 +141,9 @@
         </form>
     </div>
 </div>
+
+<!-- Include baseline filters JavaScript -->
+<script src="{% static 'research_dashboard/js/baseline_filters.js' %}"></script>
 
 <script>
     /**
