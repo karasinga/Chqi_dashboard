@@ -15,6 +15,8 @@ class BaselineFilters {
         this.debounceDelay = 500; // 500ms delay
         this.debounceTimer = null;
         this.isRequestInProgress = false;
+        this.pendingChangesQueue = []; // Queue to track user selections during requests
+        this.lastProcessedState = null; // Track the last successfully processed filter state
 
         this.initializeEventListeners();
         console.log('Baseline filters initialized with enhanced debouncing');
@@ -37,7 +39,29 @@ class BaselineFilters {
         });
 
         this.form.addEventListener('htmx:afterRequest', () => {
-            this.isRequestInProgress = false;
+            // Add a small delay before accepting new changes to prevent rapid-fire requests
+            setTimeout(() => {
+                this.isRequestInProgress = false;
+
+                // Process any queued changes
+                if (this.pendingChangesQueue.length > 0) {
+                    console.log(`Processing ${this.pendingChangesQueue.length} queued changes`);
+
+                    // Get the most recent change (last in queue)
+                    const latestChange = this.pendingChangesQueue[this.pendingChangesQueue.length - 1];
+                    this.pendingChangesQueue = []; // Clear the queue
+
+                    console.log('Applying latest queued change:', latestChange);
+
+                    // Apply the latest state to the form
+                    this.applyFilterState(latestChange.state);
+
+                    // Trigger a new filter update with the queued state
+                    setTimeout(() => {
+                        this.handleFilterChange({ target: { name: latestChange.source } });
+                    }, 50);
+                }
+            }, 100);
         });
     }
 
@@ -58,8 +82,15 @@ class BaselineFilters {
             clearTimeout(this.debounceTimer);
         }
 
-        // If a request is already in progress, ignore this change
+        // If a request is already in progress, queue this change
         if (this.isRequestInProgress) {
+            const currentState = this.getCurrentFilterValues();
+            this.pendingChangesQueue.push({
+                state: currentState,
+                timestamp: Date.now(),
+                source: event?.target?.name || 'unknown'
+            });
+            console.log('Request in progress, queued change:', currentState);
             return;
         }
 
@@ -246,6 +277,27 @@ class BaselineFilters {
             clearTimeout(this.debounceTimer);
         }
         this.triggerFilterUpdate();
+    }
+
+    /**
+     * Get queue status for debugging
+     */
+    getQueueStatus() {
+        return {
+            queueLength: this.pendingChangesQueue.length,
+            isRequestInProgress: this.isRequestInProgress,
+            lastProcessedState: this.lastProcessedState
+        };
+    }
+
+    /**
+     * Clear the pending changes queue
+     */
+    clearQueue() {
+        const clearedCount = this.pendingChangesQueue.length;
+        this.pendingChangesQueue = [];
+        console.log(`Cleared ${clearedCount} pending changes from queue`);
+        return clearedCount;
     }
 }
 
